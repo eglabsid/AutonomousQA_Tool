@@ -119,11 +119,6 @@ class MyApp(QWidget):
             self.list_widget.addItem(item)
 
 
-
-
-
-
-
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = MyApp()
