@@ -1,11 +1,15 @@
 import sys
 from PyQt5 import uic, QtWidgets
 
+# from PyQt5.QtWidgets import QApplication, QMainWindow, QComboBox, QVBoxLayout, QWidget, QLayout
+
 window_ui = 'main_window.ui'
+# window_ui = 'test.ui'
 
 class MyWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super(MyWindow, self).__init__()
+
         # UI 파일 로드
         try:
             uic.loadUi(window_ui, self)
