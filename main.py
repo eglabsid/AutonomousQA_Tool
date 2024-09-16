@@ -4,14 +4,13 @@ from PyQt5.QtGui import QIcon
 
 window_ui = 'main_window.ui'
 
-class MyWindow(QtWidgets.QMainWindow):
+class mainWindow(QtWidgets.QMainWindow):
     def __init__(self):
-        super(MyWindow, self).__init__()
+        super(mainWindow, self).__init__()
 
         # UI 파일 로드
         try:
             uic.loadUi(window_ui, self)
-            
             
             self.centralWidget.setLayout(self.main_layout)
             
@@ -25,6 +24,6 @@ class MyWindow(QtWidgets.QMainWindow):
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
-    window = MyWindow()
+    window = mainWindow()
     window.show()
     sys.exit(app.exec_())
