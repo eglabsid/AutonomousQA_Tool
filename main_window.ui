@@ -13,12 +13,6 @@
     <height>888</height>
    </rect>
   </property>
-  <property name="sizePolicy">
-   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-    <horstretch>0</horstretch>
-    <verstretch>0</verstretch>
-   </sizepolicy>
-  </property>
   <property name="windowTitle">
    <string>AutoQA_Tool ( dev )</string>
   </property>
@@ -26,19 +20,7 @@
    <iconset>
     <normaloff>C:/Users/bangg/.designer/backup/eglab.ico</normaloff>C:/Users/bangg/.designer/backup/eglab.ico</iconset>
   </property>
-  <widget class="QWidget" name="centralWidget">
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
-   <property name="sizePolicy">
-    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-     <horstretch>0</horstretch>
-     <verstretch>0</verstretch>
-    </sizepolicy>
-   </property>
-   <property name="autoFillBackground">
-    <bool>true</bool>
-   </property>
+  <widget class="QWidget" name="centralwidget">
    <widget class="QWidget" name="verticalLayoutWidget_3">
     <property name="geometry">
      <rect>
@@ -49,12 +31,6 @@
      </rect>
     </property>
     <layout class="QVBoxLayout" name="main_layout">
-     <property name="spacing">
-      <number>5</number>
-     </property>
-     <property name="sizeConstraint">
-      <enum>QLayout::SetMinAndMaxSize</enum>
-     </property>
      <property name="leftMargin">
       <number>5</number>
      </property>
@@ -69,12 +45,6 @@
      </property>
      <item>
       <layout class="QHBoxLayout" name="left_layout">
-       <property name="spacing">
-        <number>5</number>
-       </property>
-       <property name="sizeConstraint">
-        <enum>QLayout::SetMinAndMaxSize</enum>
-       </property>
        <property name="leftMargin">
         <number>5</number>
        </property>
@@ -89,9 +59,6 @@
        </property>
        <item>
         <layout class="QVBoxLayout" name="top_layout">
-         <property name="sizeConstraint">
-          <enum>QLayout::SetMinAndMaxSize</enum>
-         </property>
          <property name="leftMargin">
           <number>5</number>
          </property>
@@ -106,9 +73,6 @@
          </property>
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout">
-           <property name="sizeConstraint">
-            <enum>QLayout::SetMinAndMaxSize</enum>
-           </property>
            <property name="leftMargin">
             <number>5</number>
            </property>
@@ -123,12 +87,6 @@
            </property>
            <item>
             <widget class="QComboBox" name="preset_combo">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
              <property name="editable">
               <bool>true</bool>
              </property>
@@ -139,12 +97,6 @@
            </item>
            <item>
             <widget class="QPushButton" name="name_button">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
              <property name="text">
               <string>이름변경</string>
              </property>
@@ -152,12 +104,6 @@
            </item>
            <item>
             <widget class="QPushButton" name="save_button">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
              <property name="text">
               <string>저장</string>
              </property>
@@ -165,12 +111,6 @@
            </item>
            <item>
             <widget class="QPushButton" name="load_button">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
              <property name="text">
               <string>불러오기</string>
              </property>
@@ -198,9 +138,6 @@
        </item>
        <item>
         <layout class="QVBoxLayout" name="right_layout">
-         <property name="sizeConstraint">
-          <enum>QLayout::SetMinAndMaxSize</enum>
-         </property>
          <property name="leftMargin">
           <number>5</number>
          </property>
@@ -215,9 +152,6 @@
          </property>
          <item>
           <layout class="QVBoxLayout" name="verticalLayout">
-           <property name="sizeConstraint">
-            <enum>QLayout::SetMinAndMaxSize</enum>
-           </property>
            <property name="leftMargin">
             <number>5</number>
            </property>
@@ -244,17 +178,8 @@
              <property name="bottomMargin">
               <number>0</number>
              </property>
-             <property name="spacing">
-              <number>5</number>
-             </property>
              <item row="0" column="3">
               <widget class="QPushButton" name="pushButton_3">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
                <property name="text">
                 <string>전투 추가</string>
                </property>
@@ -262,12 +187,6 @@
              </item>
              <item row="0" column="1">
               <widget class="QPushButton" name="pushButton_1">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
                <property name="text">
                 <string>이미지 클릭 추가</string>
                </property>
@@ -275,27 +194,15 @@
              </item>
              <item row="0" column="2">
               <widget class="QPushButton" name="pushButton_2">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
                <property name="text">
                 <string>선택 삭제</string>
                </property>
               </widget>
              </item>
              <item row="0" column="0">
-              <widget class="QPushButton" name="pushButton_0">
+              <widget class="QPushButton" name="pushButton">
                <property name="enabled">
                 <bool>true</bool>
-               </property>
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
                </property>
                <property name="text">
                 <string>동작추가</string>
@@ -304,12 +211,6 @@
              </item>
              <item row="1" column="0">
               <widget class="QPushButton" name="pushButton_4">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
                <property name="text">
                 <string>대기 시간 추가</string>
                </property>
@@ -317,12 +218,6 @@
              </item>
              <item row="1" column="1">
               <widget class="QPushButton" name="pushButton_5">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
                <property name="text">
                 <string>동작 수정</string>
                </property>
@@ -330,12 +225,6 @@
              </item>
              <item row="1" column="2">
               <widget class="QPushButton" name="pushButton_6">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
                <property name="text">
                 <string>루틴 시작</string>
                </property>
@@ -343,12 +232,6 @@
              </item>
              <item row="1" column="3">
               <widget class="QPushButton" name="pushButton_7">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
                <property name="text">
                 <string>루틴 정지</string>
                </property>
