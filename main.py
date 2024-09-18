@@ -6,6 +6,9 @@ from PyQt5.QtCore import Qt
 from src.action_dialog import ActionDialog
 from src.image_dialog import ImageDialog
 
+
+from pynput import mouse
+
 window_ui = 'main_window.ui'
 
 class mainWindow(QtWidgets.QMainWindow):

@@ -2,7 +2,9 @@
 import sys
 from PyQt5 import uic, QtWidgets
 from PyQt5.QtGui import QIcon, QCursor, QIntValidator
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import QTimer, Qt
+
+from pynput import mouse
 
 dialog_ui = 'src/action_dialog.ui'
 
@@ -34,6 +36,9 @@ class ActionDialog(QtWidgets.QDialog):
         self.input_key.setMaxLength(1)
         self.input_key.setPlaceholderText("특정 Key")
         
+        # 마우스 리스너 시작
+        self.listener = mouse.Listener(on_click=self.on_click)
+        self.listener.start()
         
     def update_radio_btn(self):
         if self.radio_pos.isChecked():
@@ -54,6 +59,16 @@ class ActionDialog(QtWidgets.QDialog):
             self.mouse_pos.setText(f"( x, y )")
             self.mousePos = [0,0]
 
+    def on_click(self, x, y, button, pressed):
+        if pressed and button == mouse.Button.right :
+            if self.input_toggle == 0:
+                self.accept()
+
+    def closeEvent(self, event):
+        # 애플리케이션 종료 시 리스너 중지
+        self.listener.stop()
+        event.accept()
+            
     def accept_btn(self):
         if self.input_toggle == 0:
             if not self.mousePos[0] or not self.mousePos[1]:
