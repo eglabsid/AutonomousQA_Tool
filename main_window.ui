@@ -126,12 +126,6 @@
            <property name="showDropIndicator" stdset="0">
             <bool>false</bool>
            </property>
-           <property name="dragDropMode">
-            <enum>QAbstractItemView::DragDrop</enum>
-           </property>
-           <property name="defaultDropAction">
-            <enum>Qt::MoveAction</enum>
-           </property>
           </widget>
          </item>
         </layout>
@@ -200,7 +194,7 @@
               </widget>
              </item>
              <item row="0" column="0">
-              <widget class="QPushButton" name="pushButton">
+              <widget class="QPushButton" name="pushButton_0">
                <property name="enabled">
                 <bool>true</bool>
                </property>
@@ -257,7 +251,7 @@
      <x>0</x>
      <y>0</y>
      <width>1198</width>
-     <height>22</height>
+     <height>37</height>
     </rect>
    </property>
    <widget class="QMenu" name="menumenu">
