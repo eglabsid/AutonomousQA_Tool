@@ -5,6 +5,7 @@ from PyQt5.QtCore import Qt
 
 from src.action_dialog import ActionDialog
 from src.image_dialog import ImageDialog
+from src.interval_dialog import IntervalDialog
 
 from src.routine import Routine
 
@@ -51,7 +52,6 @@ class mainWindow(QtWidgets.QMainWindow):
         
     def start_routine(self):
         if self.worker is None or not self.worker.isRunning():
-
             actions = [self.list_widget.item(i) for i in range(self.list_widget.count())]
             self.worker = Routine(actions)
             self.log_text.append("루틴이 시작되었습니다.")
@@ -64,11 +64,11 @@ class mainWindow(QtWidgets.QMainWindow):
             self.worker.wait()
             
     def wait_action(self):
-        dialog = WaitDialog(self)
+        dialog = IntervalDialog(self)
         result = dialog.exec_()
 
-        if result == QDialog.Accepted:
-            item = QListWidgetItem(f"{dialog.wait_Line.text()} 초 대기")
+        if result == QtWidgets.QDialog.Accepted:
+            item = QtWidgets.QListWidgetItem(f"{dialog.wait_Line.text()} 초 대기")
             item.setData(Qt.UserRole, [4, [dialog.wait_Line.text()]])
 
             self.log_text.append(f"대기Action 추가 : {item.data(Qt.UserRole)}")
