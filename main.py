@@ -6,6 +6,7 @@ from PyQt5.QtCore import Qt
 from src.action_dialog import ActionDialog
 from src.image_dialog import ImageDialog
 
+from src.routine import Routine
 
 from pynput import mouse
 
@@ -33,11 +34,53 @@ class mainWindow(QtWidgets.QMainWindow):
                 button.clicked.connect(self.add_actions)
             elif n == 1:
                 button.clicked.connect(self.add_image)
+            elif n == 2:
+                button.clicked.connect(self.delete_curAction)
+            elif n == 4:
+                button.clicked.connect(self.wait_action)
+            elif n == 6:
+                button.clicked.connect(self.start_routine)
+            elif n == 7:
+                button.clicked.connect(self.stop_routine)
         
         self.preset_combo.addItems([f"프리셋 {i}" for i in range(0, 10)])  # 예시 프리셋 추가
         self.preset_combo.currentIndexChanged.connect(self.update_preset)                
         self.log_text.setReadOnly(True)
-    
+
+        self.worker = None
+        
+    def start_routine(self):
+        if self.worker is None or not self.worker.isRunning():
+
+            actions = [self.list_widget.item(i) for i in range(self.list_widget.count())]
+            self.worker = Routine(actions)
+            self.log_text.append("루틴이 시작되었습니다.")
+            self.worker.start()
+
+    def stop_routine(self):
+        if self.worker is not None and self.worker.isRunning():
+            self.worker.stop()
+            self.log_text.append("루틴이 정지되었습니다.")
+            self.worker.wait()
+            
+    def wait_action(self):
+        dialog = WaitDialog(self)
+        result = dialog.exec_()
+
+        if result == QDialog.Accepted:
+            item = QListWidgetItem(f"{dialog.wait_Line.text()} 초 대기")
+            item.setData(Qt.UserRole, [4, [dialog.wait_Line.text()]])
+
+            self.log_text.append(f"대기Action 추가 : {item.data(Qt.UserRole)}")
+            self.list_widget.addItem(item)
+            
+    def delete_curAction(self):
+        selectedRow = self.list_widget.currentRow()
+        if selectedRow != -1:
+            selectedItem = self.list_widget.item(selectedRow)
+            self.log_text.append(f"제거 : {selectedItem.text()}")
+            self.list_widget.takeItem(selectedRow)
+            
     def update_preset(self, idx):
         self.list_widget.clear()
         self.preset_index = idx

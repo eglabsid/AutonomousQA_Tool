@@ -39,17 +39,8 @@ class StartRoutine(QThread):
                         print(b[0],b[1])
                         pos = pyautogui.locateOnScreen(b[0], confidence=b[1])
                         print(pos)
-
-
-
-
-
-
-
                     print(f"실행 {data}")
                 self.msleep(500)
-
-
 
     def stop(self):
         self.running = False
