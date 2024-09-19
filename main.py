@@ -113,10 +113,10 @@ class mainWindow(QtWidgets.QMainWindow):
         item = None
 
         if result == QtWidgets.QDialog.Accepted:
-            item = QtWidgets.QListWidgetItem(f"이미지 클릭 {os.path.basename(dialog.image_Path)}")
-            item.setData(Qt.UserRole, [2, [dialog.image_Path, dialog.confidence.value()]])
+            item = QtWidgets.QListWidgetItem(f"이미지 클릭 {os.path.basename(dialog._imgPath)}")
+            item.setData(Qt.UserRole, [2, [dialog._imgPath, dialog.confidence.value()]])
 
-            self.log_text.append(f"이미지클릭Action 추가{os.path.basename(dialog.image_Path)}, 유사도:{dialog.confidence.value()}")
+            self.log_text.append(f"이미지클릭Action 추가{os.path.basename(dialog._imgPath)}, 유사도:{dialog.confidence.value()}")
             self.list_widget.addItem(item)
 
 

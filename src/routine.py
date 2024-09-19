@@ -28,7 +28,8 @@ class Routine(QThread):
                     elif a == 1:
                         pyautogui.press(b)   # 키 입력
                     elif a == 2:
-                        image_path = os.path.abspath('sadCat.png')
+                        # image_path = os.path.abspath(b[0])
+                        image_path = b[0]
                         print(f"이미지 절대 경로: {image_path}")
 
                         if os.path.exists(image_path):
@@ -36,7 +37,7 @@ class Routine(QThread):
                             print(f"이미지 위치: {pos}")
                         else:
                             print(f"파일을 찾을 수 없습니다: {image_path}")
-                        print(b[0],b[1])
+                        
                         pos = pyautogui.locateOnScreen(b[0], confidence=b[1])
                         print(pos)
                     print(f"실행 {data}")
