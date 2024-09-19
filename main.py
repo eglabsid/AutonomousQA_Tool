@@ -7,7 +7,7 @@ from src.action_dialog import ActionDialog
 from src.image_dialog import ImageDialog
 from src.interval_dialog import IntervalDialog
 
-from src.routine import Routine
+from utils.routine import Routine
 
 window_ui = 'main_window.ui'
 
