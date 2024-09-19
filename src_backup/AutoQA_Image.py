@@ -1,3 +1,5 @@
+import os.path
+
 from PyQt5.QtWidgets import QVBoxLayout, QDialog, QMessageBox, QLineEdit, QLabel, QPushButton, QHBoxLayout, QFileDialog, QSpinBox
 
 class ImageDialog(QDialog):
@@ -28,7 +30,7 @@ class ImageDialog(QDialog):
         self.confidence_label = QLabel("유사도 : ")
         self.confidence = QSpinBox(self)
         self.confidence.setRange(50,100)
-        self.confidence.setValue(100)
+        self.confidence.setValue(80)
 
         self.confirm_button = QPushButton("확인", self)
         self.confirm_button.clicked.connect(self.acceptbtn)
@@ -61,6 +63,10 @@ class ImageDialog(QDialog):
         image_path, _ = QFileDialog.getOpenFileName(self, "이미지 파일 선택", "", file_filter, options=options)
 
         if image_path:
+            project_dir = os.path.dirname(os.path.abspath(__file__))
+
+            relative_image_path = os.path.relpath(image_path, project_dir)
+            image_path = relative_image_path
             self.img_path.setText(image_path)
             self.image_Path = image_path
         else:

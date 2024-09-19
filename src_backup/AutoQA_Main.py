@@ -4,6 +4,8 @@ from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QCo
 from PyQt5.QtGui import QIcon
 from AutoQA_Action import ActionDialog
 from AutoQA_Image import ImageDialog
+from AutoQA_Wait import WaitDialog
+from AutoQA_Routine import StartRoutine
 from PyQt5.QtCore import Qt
 
 
@@ -57,8 +59,17 @@ class MyApp(QWidget):
             grid_layout.addWidget(button, (i // 4) + 1, i % 4)
             if i == 0:
                 button.clicked.connect(self.adAct)
-            if i == 1:
+            elif i == 1:
                 button.clicked.connect(self.adImg)
+            elif i == 2:
+                button.clicked.connect(self.current_del)
+            elif i == 4:
+                button.clicked.connect(self.adWait)
+            elif i == 6:
+                button.clicked.connect(self.start_routine)
+            elif i == 7:
+                button.clicked.connect(self.stop_Routine)
+
 
         right_layout.addLayout(grid_layout)
 
@@ -77,6 +88,8 @@ class MyApp(QWidget):
         self.setWindowIcon(QIcon('eglab.ico'))
         self.setGeometry(300, 300, 1200, 900)
         self.show()
+
+        self.worker = None
 
         # 테스트 필드
 
@@ -109,14 +122,49 @@ class MyApp(QWidget):
     def adImg(self):
         dialog = ImageDialog(self)
         result = dialog.exec_()
-        item = None
 
         if result == QDialog.Accepted:
-            item = QListWidgetItem(f"이미지 클릭 {os.path.basename(dialog.image_Path)}")
-            item.setData(Qt.UserRole, [2, [dialog.image_Path, dialog.confidence.value()]])
+            item = QListWidgetItem(f"이미지 클릭 ({dialog.image_Path}), 유사도:{dialog.confidence.value() / 100}")
+            item.setData(Qt.UserRole, [2, [dialog.image_Path, dialog.confidence.value() / 100]])
 
-            self.log_text.append(f"이미지클릭Action 추가{os.path.basename(dialog.image_Path)}, 유사도:{dialog.confidence.value()}")
+            self.log_text.append(f"이미지클릭Action 추가 : {item.data(Qt.UserRole)}")
             self.list_widget.addItem(item)
+
+    def current_del(self):
+        selectedRow = self.list_widget.currentRow()
+        if selectedRow != -1:
+            selectedItem = self.list_widget.item(selectedRow)
+            self.log_text.append(f"제거 : {selectedItem.text()}")
+            self.list_widget.takeItem(selectedRow)
+
+    def adWait(self):
+        dialog = WaitDialog(self)
+        result = dialog.exec_()
+
+        if result == QDialog.Accepted:
+            item = QListWidgetItem(f"{dialog.wait_Line.text()} 초 대기")
+            item.setData(Qt.UserRole, [4, [dialog.wait_Line.text()]])
+
+            self.log_text.append(f"대기Action 추가 : {item.data(Qt.UserRole)}")
+            self.list_widget.addItem(item)
+
+    def start_routine(self):
+        if self.worker is None or not self.worker.isRunning():
+
+            items = [self.list_widget.item(i) for i in range(self.list_widget.count())]
+            self.worker = StartRoutine(items)
+            self.log_text.append("루틴이 시작되었습니다.")
+            self.worker.start()
+
+    def stop_Routine(self):
+        if self.worker is not None and self.worker.isRunning():
+            self.worker.stop()
+            self.log_text.append("루틴이 정지되었습니다.")
+            self.worker.wait()
+
+
+
+
 
 
 if __name__ == '__main__':
