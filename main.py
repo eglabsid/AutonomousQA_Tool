@@ -9,8 +9,6 @@ from src.interval_dialog import IntervalDialog
 
 from src.routine import Routine
 
-from pynput import mouse
-
 window_ui = 'main_window.ui'
 
 class mainWindow(QtWidgets.QMainWindow):
@@ -38,7 +36,7 @@ class mainWindow(QtWidgets.QMainWindow):
             elif n == 2:
                 button.clicked.connect(self.delete_curAction)
             elif n == 4:
-                button.clicked.connect(self.wait_action)
+                button.clicked.connect(self.set_interval)
             elif n == 6:
                 button.clicked.connect(self.start_routine)
             elif n == 7:
@@ -63,13 +61,13 @@ class mainWindow(QtWidgets.QMainWindow):
             self.log_text.append("루틴이 정지되었습니다.")
             self.worker.wait()
             
-    def wait_action(self):
+    def set_interval(self):
         dialog = IntervalDialog(self)
         result = dialog.exec_()
 
         if result == QtWidgets.QDialog.Accepted:
-            item = QtWidgets.QListWidgetItem(f"{dialog.wait_Line.text()} 초 대기")
-            item.setData(Qt.UserRole, [4, [dialog.wait_Line.text()]])
+            item = QtWidgets.QListWidgetItem(f"{dialog.interval_line.text()} 초 대기")
+            item.setData(Qt.UserRole, [4, [dialog.interval_line.text()]])
 
             self.log_text.append(f"대기Action 추가 : {item.data(Qt.UserRole)}")
             self.list_widget.addItem(item)
