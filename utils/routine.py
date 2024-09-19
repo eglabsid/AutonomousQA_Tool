@@ -1,6 +1,6 @@
 import os.path
 
-from PyQt5.QtCore import QThread, Qt
+from PyQt5.QtCore import QThread, Qt, pyqtSignal
 import pyautogui
 import numpy as np
 import cv2
@@ -12,6 +12,9 @@ class Routine(QThread):
         super().__init__()
         self.running = True
         self.items = items
+        self.finished = pyqtSignal(str)
+        self.detected_objects = pyqtSignal(str, list) 
+
 
     def run(self):
         while self.running:
@@ -28,6 +31,8 @@ class Routine(QThread):
                     elif a == 1:
                         pyautogui.press(b)   # 키 입력
                     elif a == 2:
+                        
+                        self.finished.emit("이미지 탐색중")
                         # image_path = os.path.abspath(b[0])
                         image_path = b[0]
                         print(f"이미지 절대 경로: {image_path}")
