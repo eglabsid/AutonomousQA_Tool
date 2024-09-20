@@ -48,9 +48,9 @@ def detect_image(source_path, target_path):
     # 임계값을 넘는 위치 찾기
     locations = np.where(result >= threshold)
     
-    cv2.imshow('locations',result)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # cv2.imshow('locations',result)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
     
     locations = list(zip(*locations[::-1]))
     
