@@ -4,7 +4,6 @@ import numpy as np
 # import cv2
 
 
-from utils import inputManager
 
 class Routine(QThread):
 
@@ -28,11 +27,12 @@ class Routine(QThread):
                     if a == 0:
                         # pyautogui.click(int(b[0]), int(b[1]))    # 클릭
                         pos_xy = list(map(int,b))
-                        inputManager.move_mouse(pos_xy[0],pos_xy[1])
-                        inputManager.click_mouse()
+                        # inputManager.move_mouse(pos_xy[0],pos_xy[1])
+                        # inputManager.click_mouse()
                     elif a == 1:
                         # pyautogui.press(b)   # 키 입력
-                        inputManager.release_key(b)
+                        # inputManager.release_key(b)
+                        pass
                     elif a == 2:
                         
                         self.finished.emit("이미지 탐색중")

@@ -13,7 +13,8 @@ import common
 # cd yolov5
 # pip install -r requirements.txt
 
-        
+folder_dir = os.getcwd()+"/screen"
+
 class DetectObject():
     
     __slot__ = ['model','cur_screenshot','detections']
@@ -81,7 +82,7 @@ class DetectObject():
             print("---")
         
         # 결과 저장 디렉토리
-        result_dir = os.getcwd()+'/screen/bounding_box'
+        result_dir = folder_dir+'/bounding_box'
 
         # 기존 디렉토리 삭제 및 재생성
         if os.path.exists(result_dir):
@@ -117,7 +118,7 @@ class DetectObject():
 
         
         # 결과 이미지 저장
-        folder_dir = os.getcwd()+"/screen"
+        # folder_dir = os.getcwd()+"/screen"
         common.create_directory_if_not_exists(folder_dir)
         matches_file = folder_dir+"/similar_region.jpg"
         cv2.imwrite(matches_file, img_matches)
@@ -132,17 +133,20 @@ class DetectObject():
         best_scale = 1.0
         best_loc = (0, 0)
 
-        for scale in np.arange(scale_range[0], scale_range[1], scale_step):
-            # 크롭된 이미지의 크기 조정
-            resized_template = cv2.resize(cropped_image, (0, 0), fx=scale, fy=scale)
-            result = cv2.matchTemplate(full_image, resized_template, cv2.TM_CCOEFF_NORMED)
-            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+        try:
+            for scale in np.arange(scale_range[0], scale_range[1], scale_step):
+                # 크롭된 이미지의 크기 조정
+                resized_template = cv2.resize(cropped_image, (0, 0), fx=scale, fy=scale)
+                result = cv2.matchTemplate(full_image, resized_template, cv2.TM_CCOEFF_NORMED)
+                min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
 
-            if max_val > best_val:
-                best_val = max_val
-                best_match = resized_template
-                best_scale = scale
-                best_loc = max_loc
+                if max_val > best_val:
+                    best_val = max_val
+                    best_match = resized_template
+                    best_scale = scale
+                    best_loc = max_loc
+        except:
+            pass
 
         top_left = best_loc
         h, w, _ = best_match.shape
@@ -154,7 +158,7 @@ class DetectObject():
         cv2.rectangle(full_image, top_left, bottom_right, (0, 255, 0), 2)
 
         # 결과 이미지 저장
-        folder_dir = os.getcwd()+"/screen"
+        # folder_dir = os.getcwd()+"/screen"
         common.create_directory_if_not_exists(folder_dir)
         result_dir = folder_dir+"/matching.jpg"
         
@@ -167,8 +171,8 @@ def main():
     process_name = "Geometry Dash"  # 예: "Notepad", "Chrome" 등
     target_class = "clock"  # 예: "person", "car", "laptop" 등
     
-    source_img = os.getcwd()+'/screen/screenshot.jpg'
-    target_img = os.getcwd()+'/target/b1.jpg'
+    source_img = os.getcwd()+'/src_backup/sadCat.png'
+    target_img = os.getcwd()+'/src_backup/test.png'
     
     observer = DetectObject()
     observer.find_similar_regions(source_img,target_img)
