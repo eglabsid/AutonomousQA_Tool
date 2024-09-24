@@ -3,7 +3,12 @@ from PyQt5 import uic, QtWidgets
 from PyQt5.QtGui import QIcon, QImage, QPixmap
 from PyQt5.QtCore import QThread, pyqtSignal, QTimer
 
+# opencv
 import cv2
+
+# dlib 
+import dlib
+
 import numpy as np
 import mss
 import mss.tools
@@ -30,11 +35,85 @@ class ScreenCaptureThread(QThread):
         # 템플릿 이미지 로드
         self.template = cv2.imread(target_img, 0)
         self.template_w, self.template_h = self.template.shape[::-1]
-    
-    
+
+        # dlib
+        self.is_tracking = False # Flag to indicate if we are currently tracking an object
+        self.tracking_pos = None
+        # Initialize the tracker
+        self.tracker = dlib.correlation_tracker()
+
+    def detect_template_using_dlib(self,frame):
+        
+        tracking_pos = (0,0)
+        crop_img = frame
+        if self.is_tracking:
+            # Update the tracker and get the position of the object
+            self.tracker.update(frame)
+            pos = self.tracker.get_position()
+            cv2.rectangle(frame, (int(pos.left()), int(pos.top())), (int(pos.right()), int(pos.bottom())), (0, 255, 0), 2)
+        else:
+            gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)            
+            # Use template matching to find the object in the frame
+            res = cv2.matchTemplate(gray_frame, self.template, cv2.TM_CCOEFF_NORMED)
+            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+
+            # Define the bounding box for the detected object
+            top_left = max_loc
+            bottom_right = (top_left[0] + self.template_w, top_left[1] + self.template_h)
+
+            # Check if the match is good enough
+            if max_val > 0.8:  # You can adjust this threshold
+                # Start the tracker with the detected object
+                self.tracker.start_track(frame, dlib.rectangle(top_left[0], top_left[1], bottom_right[0], bottom_right[1]))
+                self.is_tracking = True
+        
+        return frame,tracking_pos,crop_img
+
+    # 초기 검색을 위해 사용
+    def detect_template_using_cv(self,frame, scale_range=(0.5, 1.5), scale_step=0.15):
+        gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                
+        best_match = None
+        best_val = -1
+        best_scale = 1.0
+        best_loc = (0, 0)
+
+        try:
+            for scale in np.arange(scale_range[0], scale_range[1], scale_step):
+                # 크롭된 이미지의 크기 조정
+                resized_template = cv2.resize(self.template, (0, 0), fx=scale, fy=scale)
+                result = cv2.matchTemplate(gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
+                min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+
+                if max_val > best_val:
+                    best_val = max_val
+                    best_match = resized_template
+                    best_scale = scale
+                    best_loc = max_loc
+        except:
+            pass
+
+        top_left = best_loc
+        # h, w, _ = best_match.shape
+        h, w = best_match.shape
+        bottom_right = (top_left[0] + w, top_left[1] + h)
+
+        bounding_box = [top_left,bottom_right]
+
+        center_middle = (top_left[0] + w*0.5, top_left[1] + h*0.5)
+        
+        # 크롭할 영역 정의 (x, y, width, height)
+        crop_w, crop_h = 250, 250
+        crop_x, crop_y = top_left[0],top_left[1] 
+        cropped_img = frame[crop_y:crop_y+crop_h, crop_x:crop_x+crop_w]
+
+        # 결과를 이미지에 그리기
+        cv2.rectangle(frame, top_left, bottom_right, (255, 0, 0), 4)
+        
+        return frame, center_middle, cropped_img, bounding_box
+        
     def run(self):
-        scale_range=(0.5, 1.5)
-        scale_step=0.15
+        
         with mss.mss() as sct:
             monitor = sct.monitors[1]
             while self.running:
@@ -42,45 +121,11 @@ class ScreenCaptureThread(QThread):
                 img = np.array(screenshot)
                 img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
 
-                # 그레이스케일로 변환
-                gray_frame = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-                        
-                best_match = None
-                best_val = -1
-                best_scale = 1.0
-                best_loc = (0, 0)
+                img, center_middle, crop_img, _ = self.detect_template_using_cv(img,scale_step=0.5)
+                # img,center_middle,crop_img = self.detect_template_using_dlib(img)
 
-                try:
-                    for scale in np.arange(scale_range[0], scale_range[1], scale_step):
-                        # 크롭된 이미지의 크기 조정
-                        resized_template = cv2.resize(self.template, (0, 0), fx=scale, fy=scale)
-                        result = cv2.matchTemplate(gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
-                        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
-
-                        if max_val > best_val:
-                            best_val = max_val
-                            best_match = resized_template
-                            best_scale = scale
-                            best_loc = max_loc
-                except:
-                    pass
-
-                top_left = best_loc
-                # h, w, _ = best_match.shape
-                h, w = best_match.shape
-                bottom_right = (top_left[0] + w, top_left[1] + h)
-
-                center_middle = (top_left[0] + w*0.5, top_left[1] + h*0.5)
-                
-                # 크롭할 영역 정의 (x, y, width, height)
-                crop_w, crop_h = 250, 250
-                crop_x, crop_y = top_left[0],top_left[1] 
-                cropped_image = img[crop_y:crop_y+crop_h, crop_x:crop_x+crop_w]
-
-                # 결과를 이미지에 그리기
-                cv2.rectangle(img, top_left, bottom_right, (255, 0, 0), 4)
-
-                self.frame_captured.emit(img,center_middle,cropped_image)
+                # self.frame_captured.emit(img,center_middle,cropped_image)
+                self.frame_captured.emit(img,center_middle,crop_img)
                 self.msleep(int(1000 / self.fps))
                 
 
