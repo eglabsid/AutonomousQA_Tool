@@ -21,7 +21,7 @@ class DetectObject():
     
     def __init__(self):
         # self.model = None
-        self.model = self.load_yolo_model() # path = f"\model\yolov5s.pt"
+        # self.load_yolo_model() # path = f"\model\yolov5s.pt"
         self.cur_screenshot = None
         self.detections = {}
     
@@ -29,7 +29,8 @@ class DetectObject():
         
         model = torch.hub.load(repo_or_dir, model)
         model.eval()
-        return model
+        self.model = model
+        
 
     # # YOLOv5s 모델이 감지할 수 있는 클래스 목록
     # classes = [
@@ -178,6 +179,8 @@ def main():
     observer.find_similar_regions(source_img,target_img)
     center_pos,scale = observer.multi_scale_template_matching(source_img,target_img)
     print(center_pos)
+    # Yolo section
+    observer.load_yolo_model()
     results = observer.detect_bounding_box_in_gui(source_img)
     # result = observer.detect_class_in_bounding_box(target_class)
     
