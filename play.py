@@ -6,8 +6,6 @@ from PyQt5.QtCore import QThread, pyqtSignal, QTimer
 # opencv
 import cv2
 
-# dlib 
-import dlib
 
 import numpy as np
 import mss
@@ -17,11 +15,16 @@ import mss.tools
 from memory_profiler import profile
 
 import pygetwindow as gw
+
+# pyautogui
 import pyautogui
 import subprocess, psutil
 
 window_ui = 'play.ui'
 
+crop_size = {}
+crop_size['width'] = 300
+crop_size['height'] = 300
 
 class ScreenCaptureThread(QThread):
     frame_captured = pyqtSignal(np.ndarray, tuple, np.ndarray)
@@ -36,38 +39,53 @@ class ScreenCaptureThread(QThread):
         self.template = cv2.imread(target_img, 0)
         self.template_w, self.template_h = self.template.shape[::-1]
 
-        # dlib
-        self.is_tracking = False # Flag to indicate if we are currently tracking an object
-        self.tracking_pos = None
-        # Initialize the tracker
-        self.tracker = dlib.correlation_tracker()
-
-    def detect_template_using_dlib(self,frame):
-        
-        tracking_pos = (0,0)
-        crop_img = frame
-        if self.is_tracking:
-            # Update the tracker and get the position of the object
-            self.tracker.update(frame)
-            pos = self.tracker.get_position()
-            cv2.rectangle(frame, (int(pos.left()), int(pos.top())), (int(pos.right()), int(pos.bottom())), (0, 255, 0), 2)
+    def detect_template_with_pyautogui(self,frame,location):
+        if location:
+            print(f"이미지를 찾았습니다! 위치: {location}")
+    
+            # 이미지의 중심 좌표
+            center = pyautogui.center(location)
+            print(f"중심 좌표: {center}")
+            
+            # 스크린샷 찍기
+            screenshot = pyautogui.screenshot()
+            
+            # 스크린샷을 OpenCV 이미지로 변환
+            screenshot = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
+            
+            # 바운딩 박스 그리기
+            top_left = (location.left, location.top)
+            bottom_right = (location.left + location.width, location.top + location.height)
+            cv2.rectangle(screenshot, top_left, bottom_right, (0, 0, 255), 3)
+            
+            # 바운딩 박스가 그려진 이미지 저장
+            cv2.imwrite('screenshot_with_bounding_box.png', screenshot)
+            print("바운딩 박스가 그려진 스크린샷을 저장했습니다: screenshot_with_bounding_box.png")
+            
+            # 이미지 크롭
+            cropped_image = screenshot[location.top:location.top + location.height, location.left:location.left + location.width]
+            print("크롭된 이미지를 저장했습니다: cropped_image.png")
         else:
-            gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)            
-            # Use template matching to find the object in the frame
-            res = cv2.matchTemplate(gray_frame, self.template, cv2.TM_CCOEFF_NORMED)
-            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-
-            # Define the bounding box for the detected object
-            top_left = max_loc
-            bottom_right = (top_left[0] + self.template_w, top_left[1] + self.template_h)
-
-            # Check if the match is good enough
-            if max_val > 0.8:  # You can adjust this threshold
-                # Start the tracker with the detected object
-                self.tracker.start_track(frame, dlib.rectangle(top_left[0], top_left[1], bottom_right[0], bottom_right[1]))
-                self.is_tracking = True
+            print("이미지를 찾을 수 없습니다.")
+            
+    def detect_template_in_frame(self,frame,template, threshold = 0.8):
         
-        return frame,tracking_pos,crop_img
+        template_w, template_h = template.shape[::-1]
+        gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        # Use template matching to find the object in the frame
+        res = cv2.matchTemplate(gray_frame, template, cv2.TM_CCOEFF_NORMED)
+        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+
+        # Define the bounding box for the detected object
+        top_left = max_loc
+        bottom_right = (top_left[0] + template_w, top_left[1] + template_h)
+
+        # Check if the match is good enough
+        if max_val > threshold:  # You can adjust this threshold
+            return True
+        else:
+            return False
 
     # 초기 검색을 위해 사용
     def detect_template_using_cv(self,frame, scale_range=(0.5, 1.5), scale_step=0.15):
@@ -103,14 +121,14 @@ class ScreenCaptureThread(QThread):
         center_middle = (top_left[0] + w*0.5, top_left[1] + h*0.5)
         
         # 크롭할 영역 정의 (x, y, width, height)
-        crop_w, crop_h = 250, 250
+        # crop_w, crop_h = 250, 250
         crop_x, crop_y = top_left[0],top_left[1] 
-        cropped_img = frame[crop_y:crop_y+crop_h, crop_x:crop_x+crop_w]
+        cropped_img = frame[crop_y:crop_y+crop_size['height'], crop_x:crop_x+crop_size['width']]
 
         # 결과를 이미지에 그리기
         cv2.rectangle(frame, top_left, bottom_right, (255, 0, 0), 4)
         
-        return frame, center_middle, cropped_img, bounding_box
+        return center_middle, cropped_img, bounding_box
         
     def run(self):
         
@@ -121,8 +139,7 @@ class ScreenCaptureThread(QThread):
                 img = np.array(screenshot)
                 img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
 
-                img, center_middle, crop_img, _ = self.detect_template_using_cv(img,scale_step=0.5)
-                # img,center_middle,crop_img = self.detect_template_using_dlib(img)
+                center_middle, crop_img, _ = self.detect_template_using_cv(img,scale_step=0.5)
 
                 # self.frame_captured.emit(img,center_middle,cropped_image)
                 self.frame_captured.emit(img,center_middle,crop_img)
@@ -181,7 +198,7 @@ class playWindow(QtWidgets.QMainWindow):
         pix_map = self.get_widgets_img(frame, 500, 500)
         self.screen.setPixmap(pix_map)
         
-        pix_map = self.get_widgets_img(crop_frame, 250, 250)
+        pix_map = self.get_widgets_img(crop_frame, crop_size['width'], crop_size['height'])
         self.monitor.setPixmap(pix_map)
                               
 

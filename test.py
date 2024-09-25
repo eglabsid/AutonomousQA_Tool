@@ -1,60 +1,68 @@
 import cv2
-import dlib
-
+import pyautogui
+import psutil
 import numpy as np
-import mss
-import mss.tools
+import time
+from Quartz import CoreGraphics as CG
 
-# Load the template image
-template = cv2.imread('target/b1.jpg', cv2.IMREAD_GRAYSCALE)
-template_w, template_h = template.shape[::-1]
+# Visual Studio Code 프로세스 ID 찾기
+def find_vscode_pid():
+    for proc in psutil.process_iter(['pid', 'name']):
+        print(proc.info['name'])
+        if proc.info['name'] == 'Qt Creator':  # macOS의 경우
+            return proc.info['pid']
+    return None
 
-# Initialize the video capture
-cap = cv2.VideoCapture(0)
-
-# Initialize the tracker
-tracker = dlib.correlation_tracker()
-
-# Flag to indicate if we are currently tracking an object
-tracking = False
-
-with mss.mss() as sct:
-    monitor = sct.monitors[1]                
-    while True:
-        screenshot = sct.grab(monitor)
-        img = np.array(screenshot)
-        img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
-
-        gray_frame = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-        if tracking:
-            # Update the tracker and get the position of the object
-            tracker.update(img)
-            pos = tracker.get_position()
-
-            # Draw a rectangle around the tracked object
-            cv2.rectangle(img, (int(pos.left()), int(pos.top())), (int(pos.right()), int(pos.bottom())), (0, 255, 0), 2)
-        else:
-            # Use template matching to find the object in the frame
-            res = cv2.matchTemplate(gray_frame, template, cv2.TM_CCOEFF_NORMED)
-            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-
-            # Define the bounding box for the detected object
-            top_left = max_loc
-            bottom_right = (top_left[0] + template_w, top_left[1] + template_h)
-
-            # Check if the match is good enough
-            if max_val > 0.8:  # You can adjust this threshold
-                # Start the tracker with the detected object
-                tracker.start_track(img, dlib.rectangle(top_left[0], top_left[1], bottom_right[0], bottom_right[1]))
-                tracking = True
-
-        # Display the frame
-        cv2.imshow('Frame', img)
-
-        # Break the loop on 'q' key press
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+# 프로세스 ID를 사용하여 창을 활성화하는 함수
+def activate_window(pid):
+    windows = CG.CGWindowListCopyWindowInfo(CG.kCGWindowListOptionOnScreenOnly, CG.kCGNullWindowID)
+    for window in windows:
+        if window.get('kCGWindowOwnerPID') == pid:
+            window_id = window['kCGWindowNumber']
+            CG.CGWindowListCreateDescriptionFromArray([window_id])
+            CG.CGWindowListCreateImage(CG.CGRectNull, CG.kCGWindowListOptionIncludingWindow, window_id, CG.kCGWindowImageDefault)
             break
 
-cap.release()
-cv2.destroyAllWindows()
+# Visual Studio Code 창을 활성화시키기 위해 프로세스 ID 사용
+vscode_pid = find_vscode_pid()
+
+if vscode_pid:
+    activate_window(vscode_pid)
+    time.sleep(1)  # 창이 활성화될 시간을 기다림
+
+    # 추적할 이미지 파일 경로
+    image_path = 'target/q.png'
+
+    # 이미지 찾기
+    location = pyautogui.locateOnScreen(image_path, confidence=0.7)
+
+    if location:
+        print(f"이미지를 찾았습니다! 위치: {location}")
+
+        # 이미지의 중심 좌표
+        center = pyautogui.center(location)
+        print(f"중심 좌표: {center}")
+
+        # 스크린샷 찍기
+        screenshot = pyautogui.screenshot()
+
+        # 스크린샷을 OpenCV 이미지로 변환
+        screenshot = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
+
+        # 바운딩 박스 그리기
+        top_left = (location.left, location.top)
+        bottom_right = (location.left + location.width, location.top + location.height)
+        cv2.rectangle(screenshot, top_left, bottom_right, (0, 0, 255), 3)
+
+        # 바운딩 박스가 그려진 이미지 저장
+        cv2.imwrite('screenshot_with_bounding_box.png', screenshot)
+        print("바운딩 박스가 그려진 스크린샷을 저장했습니다: screenshot_with_bounding_box.png")
+
+        # 이미지 크롭
+        cropped_image = screenshot[location.top:location.top + location.height, location.left:location.left + location.width]
+        cv2.imwrite('cropped_image.png', cropped_image)
+        print("크롭된 이미지를 저장했습니다: cropped_image.png")
+    else:
+        print("이미지를 찾을 수 없습니다.")
+else:
+    print("Visual Studio Code 프로세스를 찾을 수 없습니다.")
