@@ -1,6 +1,6 @@
 import sys,os
 from PyQt5 import uic, QtWidgets
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QImage, QPixmap
 from PyQt5.QtCore import Qt
 
 from src.action_dialog import ActionDialog
@@ -8,6 +8,10 @@ from src.image_dialog import ImageDialog
 from src.interval_dialog import IntervalDialog
 
 from utils.routine import Routine
+from utils.template_matcher import UITemplateMatcher, get_all_images, get_subfolders
+
+# opencv
+import cv2
 
 window_ui = 'main_window.ui'
 
@@ -19,13 +23,16 @@ class mainWindow(QtWidgets.QMainWindow):
         uic.loadUi(window_ui, self)
         
         self.centralWidget.setLayout(self.main_layout)
+        self.progress_bar = QtWidgets.QProgressBar()
+        self.statusbar.addWidget(self.progress_bar)
+        self.setStatusBar(self.statusbar)
         
         self.setWindowTitle("AutoQA Tool (ver.Dev)")
         self.setWindowIcon(QIcon('images/icon/eglab.ico'))
         self.setGeometry(300, 300, 1650, 960)
         
         buttons = "self.pushButton_"
-        for n in range(8):
+        for n in range(9):
             name = buttons+str(n)
             button = eval(name)
             button.setFixedHeight(80)
@@ -41,6 +48,8 @@ class mainWindow(QtWidgets.QMainWindow):
                 button.clicked.connect(self.start_routine)
             elif n == 7:
                 button.clicked.connect(self.stop_routine)
+            elif n == 8:
+                button.clicked.connect(self.run_template_matching) # <------ 여기서부터 진행 2024.09.26 작업
         
         self.preset_combo.addItems([f"프리셋 {i}" for i in range(0, 10)])  # 예시 프리셋 추가
         self.preset_combo.currentIndexChanged.connect(self.update_preset)                
@@ -78,7 +87,7 @@ class mainWindow(QtWidgets.QMainWindow):
             selectedItem = self.list_widget.item(selectedRow)
             self.log_text.append(f"제거 : {selectedItem.text()}")
             self.list_widget.takeItem(selectedRow)
-            
+          
     def update_preset(self, idx):
         self.list_widget.clear()
         self.preset_index = idx
@@ -117,7 +126,42 @@ class mainWindow(QtWidgets.QMainWindow):
             self.log_text.append(f"이미지클릭Action 추가{os.path.basename(dialog._imgPath)}, 유사도:{dialog.confidence.value()}")
             self.list_widget.addItem(item)
 
+    def update_status_bar(self, current, total):
+        self.progress_bar.setMaximum(total)
+        self.progress_bar.setValue(current)
+        # self.statusbar.showMessage(f"UI Matching Progress: {current/total*100}%")
 
+    def on_finished(self, result_image):
+        # cv2.imwrite('result_matchs.jpg', result_image)
+        self.statusbar.showMessage("Matching completed!")
+
+    def run_template_matching(self): # <------ 여기서부터 진행 2024.09.26 작업
+        folder_dir = 'screen/UI'
+        image_files = get_all_images(folder_dir)
+        sub_folders = get_subfolders(folder_dir)
+        
+        # 사용 예제
+        templates = [cv2.imread(file, 0) for file in image_files]
+        image = cv2.imread('screen/ui_test.jpg')
+        gray_frame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        self.matcher = UITemplateMatcher(image,templates, scale_range=(0.9, 1.2), scale_step=0.1, threshold=0.7, gray_frame=gray_frame)
+        self.matcher.update_progress.connect(self.update_status_bar)  # 시그널 연결
+        self.matcher.finished.connect(self.on_finished)  # 작업 완료 시그널 연결
+        self.matcher.start()  # QThread 시작
+    
+    def get_widgets_img(self,frame, re_width, re_height):
+        # PyQt5 프레임에 표시
+        height, width, channel = frame.shape
+        bytes_per_line = 3 * width
+
+        frame_bytes = frame.tobytes()
+        q_img = QImage(frame_bytes, width, height, bytes_per_line, QImage.Format_RGB888)
+
+        # QImage를 리사이즈
+        q_img_resized = q_img.scaled(re_width,re_height)
+        return QPixmap.fromImage(q_img_resized)
+    
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     window = mainWindow()
