@@ -20,11 +20,49 @@ import pygetwindow as gw
 import pyautogui
 import subprocess, psutil
 
+import threading
+
 window_ui = 'play.ui'
 
 crop_size = {}
 crop_size['width'] = 300
 crop_size['height'] = 300
+
+class TemplateMatcher:
+    def __init__(self, template, scale_range, scale_step):
+        self.template = template
+        self.scale_range = scale_range
+        self.scale_step = scale_step
+        self.best_val = -1
+        self.best_match = None
+        self.best_scale = None
+        self.best_loc = None
+        self.lock = threading.Lock()
+
+    def match_template(self, gray_frame, scale):
+        resized_template = cv2.resize(self.template, (0, 0), fx=scale, fy=scale)
+        result = cv2.matchTemplate(gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
+        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+
+        with self.lock:
+            if max_val > self.best_val:
+                self.best_val = max_val
+                self.best_match = resized_template
+                self.best_scale = scale
+                self.best_loc = max_loc
+
+    def run(self, gray_frame):
+        threads = []
+        for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_step):
+            thread = threading.Thread(target=self.match_template, args=(gray_frame, scale))
+            threads.append(thread)
+            thread.start()
+
+        for thread in threads:
+            thread.join()
+
+        return self.best_val, self.best_match, self.best_scale, self.best_loc
+
 
 class ScreenCaptureThread(QThread):
     frame_captured = pyqtSignal(np.ndarray, tuple, np.ndarray)
@@ -40,6 +78,7 @@ class ScreenCaptureThread(QThread):
         self.template_w, self.template_h = self.template.shape[::-1]
 
     def detect_template_with_pyautogui(self,frame,location):
+        
         if location:
             print(f"이미지를 찾았습니다! 위치: {location}")
     
@@ -88,45 +127,35 @@ class ScreenCaptureThread(QThread):
             return False
 
     # 초기 검색을 위해 사용
-    def detect_template_using_cv(self,frame, scale_range=(0.5, 1.5), scale_step=0.15):
+    def detect_template_using_cv(self,frame, scale_range=(0.45, 0.85), scale_step=0.15):
+        
         gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                
-        best_match = None
-        best_val = -1
-        best_scale = 1.0
-        best_loc = (0, 0)
-
-        try:
-            for scale in np.arange(scale_range[0], scale_range[1], scale_step):
-                # 크롭된 이미지의 크기 조정
-                resized_template = cv2.resize(self.template, (0, 0), fx=scale, fy=scale)
-                result = cv2.matchTemplate(gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
-                min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
-
-                if max_val > best_val:
-                    best_val = max_val
-                    best_match = resized_template
-                    best_scale = scale
-                    best_loc = max_loc
-        except:
-            pass
-
+        matcher = TemplateMatcher(self.template, scale_range, scale_step)
+        best_val, best_match, best_scale, best_loc = matcher.run(gray_frame)
+        
         top_left = best_loc
         # h, w, _ = best_match.shape
         h, w = best_match.shape
         bottom_right = (top_left[0] + w, top_left[1] + h)
-
         bounding_box = [top_left,bottom_right]
-
+        
+        # Match 된 Bounding Box
+        cv2.rectangle(frame, top_left, bottom_right, (0, 0, 255), 2)
+        
         center_middle = (top_left[0] + w*0.5, top_left[1] + h*0.5)
         
         # 크롭할 영역 정의 (x, y, width, height)
+        w = crop_size['width']
+        h = crop_size['height']
+        crop_top_left = (top_left[0] - int(w*0.2), top_left[1] - int(h*0.2))
+        crop_bottom_right = (crop_top_left[0] + int(w*2), crop_top_left[1] + int(h*1))
         # crop_w, crop_h = 250, 250
-        crop_x, crop_y = top_left[0],top_left[1] 
-        cropped_img = frame[crop_y:crop_y+crop_size['height'], crop_x:crop_x+crop_size['width']]
+        crop_sx, crop_sy = crop_top_left[0],crop_top_left[1] 
+        crop_ex, crop_ey = crop_bottom_right[0],crop_bottom_right[1] 
+        cropped_img = frame[crop_sy:crop_ey, crop_sx:crop_ex]
 
         # 결과를 이미지에 그리기
-        cv2.rectangle(frame, top_left, bottom_right, (255, 0, 0), 4)
+        cv2.rectangle(frame, crop_top_left, crop_bottom_right, (255, 0, 0), 4)
         
         return center_middle, cropped_img, bounding_box
         
@@ -139,7 +168,7 @@ class ScreenCaptureThread(QThread):
                 img = np.array(screenshot)
                 img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
 
-                center_middle, crop_img, _ = self.detect_template_using_cv(img,scale_step=0.5)
+                center_middle, crop_img, _ = self.detect_template_using_cv(img)
 
                 # self.frame_captured.emit(img,center_middle,cropped_image)
                 self.frame_captured.emit(img,center_middle,crop_img)
@@ -162,7 +191,7 @@ class playWindow(QtWidgets.QMainWindow):
         
         self.setWindowTitle("Image based Playing Tool (ver.Dev)")
         self.setWindowIcon(QIcon('images/icon/eglab.ico'))
-        self.setGeometry(300, 300, 600, 800)
+        self.setGeometry(300, 300, 800, 900)
         
         self.log.setReadOnly(True)
         # buttons = "self.pushButton_"
@@ -192,7 +221,7 @@ class playWindow(QtWidgets.QMainWindow):
         return QPixmap.fromImage(q_img_resized)
 
     
-    @profile
+    # @profile
     def update_frame(self, frame, pos, crop_frame):
 
         pix_map = self.get_widgets_img(frame, 500, 500)
