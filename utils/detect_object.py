@@ -4,8 +4,8 @@ import numpy as np
 import os,shutil
 import cv2
 
-# import utils.common as common
-import common
+import utils.common as common
+# import common
 
 # pip install torch torchvision pyautogui opencv-python pillow pywin32
 #

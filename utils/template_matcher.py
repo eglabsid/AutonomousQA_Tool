@@ -53,7 +53,7 @@ class TemplateMatcher:
     def get_a_match(self, gray_frame):
         threads = []
         for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_step):
-            thread = threading.Thread(target=self.match_template, args=(gray_frame, scale))
+            thread = threading.Thread(target=self.match_a_template, args=(gray_frame, scale))
             threads.append(thread)
             thread.start()
 
