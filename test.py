@@ -1,37 +1,18 @@
-import os
-import platform
-from functools import wraps
+# 예제 딕셔너리
+my_dict = {
+    'name': 'Alice',
+    'age': 30,
+    'city': 'Seoul',
+    'job': 'Engineer'
+}
 
-def os_specific_task(os_name):
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            current_os = platform.system()
-            if current_os == os_name:
-                return func(*args, **kwargs)
-            else:
-                print(f"Skipping {func.__name__} on {current_os}")
-        return wrapper
-    return decorator
+# 키 값을 찾는 함수
+def find_key_by_expression(dictionary, search_term):
+    return [key for key in dictionary if search_term in key]
 
-@os_specific_task("Windows")
-def windows_task():
-    print("Running on Windows")
-    os.system('dir')
+# 예제 검색 단어: 'a'
+search_term = 'a'
 
-@os_specific_task("Linux")
-def linux_task():
-    print("Running on Linux")
-    os.system('ls')
-
-@os_specific_task("Darwin")
-def macos_task():
-    print("Running on macOS")
-    os.system('ls')
-
-def perform_os_specific_tasks():
-    windows_task()
-    linux_task()
-    macos_task()
-
-perform_os_specific_tasks()
+# 키 값 찾기
+matching_keys = find_key_by_expression(my_dict, search_term)
+print(matching_keys)  # 출력: ['name', 'age']

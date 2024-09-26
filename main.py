@@ -8,7 +8,7 @@ from src.image_dialog import ImageDialog
 from src.interval_dialog import IntervalDialog
 
 from utils.process_handler import WindowProcessHandler
-from utils.routine import Routine
+from utils.repeat_pattern import RepeatPattern, PatternType
 from utils.template_matcher import UITemplateMatcher, TemplateMatcher, get_all_images, get_subfolders
 
 # opencv
@@ -68,56 +68,77 @@ class mainWindow(QtWidgets.QMainWindow):
         self.gui_folder.setText(folder_dir)
         self.gui_img_files = get_all_images(folder_dir)
         self.gui_sub_folders = get_subfolders(folder_dir)
-        self.gui_locations = []
+        self.gui_info = []
         self.gui_browser.clicked.connect(self.open_browser) 
         
         self.gui_pixmap = QPixmap()
         
         # process_name = 'GeometryDash.exe'
         process_name = 'Geometry Dash'
-        self.process_name.setText(process_name)
-        self.process_name.setEnabled(False)
-        self.pcheck.stateChanged.connect(self.toggle_process_name)
+        # self.process_name.setText(process_name)
+        # self.process_name.setEnabled(False)
+        # self.pcheck.stateChanged.connect(self.toggle_process_name)
+        
+        # 프로세스 handler
+        self.handler = WindowProcessHandler()
+        self.handler.process_name = process_name
+        # List-up Combobox
+        proc_lst = self.handler.get_running_process_list()
+        for proc in proc_lst:
+            self.process_list.addItem(f"{proc['name']}")
+        self.process_list.currentIndexChanged.connect(self.update_process_list)                
         
         self.preset_combo.addItems([f"프리셋 {i}" for i in range(0, 10)])  # 예시 프리셋 추가
         self.preset_combo.currentIndexChanged.connect(self.update_preset)                
         self.log_text.setReadOnly(True)
 
-        self.worker = None
+        self.repeater = None
         
-        # 프로세스 handler
-        self.handler = None
+        
         
     def resizeEvent(self, event):
         scaled_pixmap = self.gui_pixmap.scaled(self.gui_result.size(), Qt.KeepAspectRatio)
         self.gui_result.setPixmap(scaled_pixmap)
 
-    def confirm_running_process(self):
-        self.handler = WindowProcessHandler(self.process_name.text())
-        self.handler.connect_application_by_handler()
-        # self.log_text.append(txt_log)
+    def confirm_running_process(self): ##
+        cur_proc = self.process_list.currentText()
+        # msg = self.handler.connect_application_by_handler()
+        msg = self.handler.connect_application_by_process_name(cur_proc)
+        self.log_text.append(msg)
+    
+    def update_process_list(self):
+        msg = ""
+        selected_proc = self.process_list.currentText()
+        msg = f"Selected Process: {selected_proc}"
+        self.log_text.append(msg)
         
-    def toggle_process_name(self, state):
-        if state == 2:  # QCheckBox가 체크된 상태
-            self.process_name.setEnabled(False)
-        else:  # QCheckBox가 체크 해제된 상태
-            self.process_name.setEnabled(True)
+        self.handler.process_name = selected_proc
+        msg = self.handler.connect_application_by_process_name(selected_proc)
+        self.log_text.append(msg)
+        
+    # def toggle_process_name(self, state):
+    #     if state == 2:  # QCheckBox가 체크된 상태
+    #         self.process_name.setEnabled(False)
+    #     else:  # QCheckBox가 체크 해제된 상태
+    #         self.process_name.setEnabled(True)
     
     def start_routine(self):
-        if self.worker is None or not self.worker.isRunning():
+        if self.repeater is None or not self.repeater.isRunning():
             actions = [self.list_widget.item(i) for i in range(self.list_widget.count())]
-            self.worker = Routine(actions)
+            self.repeater = RepeatPattern(actions, self.handler)
             self.log_text.append("루틴이 시작되었습니다.")
-            self.worker.start()
+            self.repeater.start()
             
             # 윈도우 창 최소화            
             self.showMinimized()
 
     def stop_routine(self):
-        if self.worker is not None and self.worker.isRunning():
-            self.worker.stop()
+        if self.repeater is not None and self.repeater.isRunning():
+            self.repeater.stop()
             self.log_text.append("루틴이 정지되었습니다.")
-            self.worker.wait()
+            self.repeater.wait()
+            
+            self.showNormal()
             
     def set_interval(self):
         dialog = IntervalDialog(self)
@@ -125,7 +146,7 @@ class mainWindow(QtWidgets.QMainWindow):
 
         if result == QtWidgets.QDialog.Accepted:
             item = QtWidgets.QListWidgetItem(f"{dialog.interval_line.text()} 초 대기")
-            item.setData(Qt.UserRole, [4, [dialog.interval_line.text()]])
+            item.setData(Qt.UserRole, [PatternType.DELAY.value, [dialog.interval_line.text()]])
 
             self.log_text.append(f"대기Action 추가 : {item.data(Qt.UserRole)}")
             self.list_widget.addItem(item)
@@ -154,11 +175,11 @@ class mainWindow(QtWidgets.QMainWindow):
         if result == QtWidgets.QDialog.Accepted:
             if dialog.input_toggle == 0:
                 item = QtWidgets.QListWidgetItem(f"좌표 클릭 ({dialog.mousePos[0]}, {dialog.mousePos[1]})")
-                item.setData(Qt.UserRole, [0, dialog.mousePos])
+                item.setData(Qt.UserRole, [PatternType.CLICK.value, dialog.mousePos])
                 self.log_text.append(f"클릭Action 추가 : ({item.data(Qt.UserRole)})")
             elif dialog.input_toggle == 1:
                 item = QtWidgets.QListWidgetItem(f"키 입력 ({dialog.input_key.text()})")
-                item.setData(Qt.UserRole, [1, [dialog.input_key.text()]])
+                item.setData(Qt.UserRole, [PatternType.TYPING.value, [dialog.input_key.text()]])
                 self.log_text.append(f"키Action 추가 : ({item.data(Qt.UserRole)})")
             self.list_widget.addItem(item)
         
@@ -170,7 +191,7 @@ class mainWindow(QtWidgets.QMainWindow):
 
         if result == QtWidgets.QDialog.Accepted:
             item = QtWidgets.QListWidgetItem(f"이미지 클릭 {os.path.basename(dialog._imgPath)}")
-            item.setData(Qt.UserRole, [2, [dialog._imgPath, dialog.confidence.value()]])
+            item.setData(Qt.UserRole, [PatternType.MATCH.value, [dialog._imgPath, dialog.confidence.value()]])
 
             self.log_text.append(f"이미지클릭Action 추가{os.path.basename(dialog._imgPath)}, 유사도:{dialog.confidence.value()}")
             self.list_widget.addItem(item)
@@ -185,36 +206,43 @@ class mainWindow(QtWidgets.QMainWindow):
         self.progress_bar.setFormat(" Completed!")
         self.gui_search.setEnabled(True)
         
-        for loc, scale, result, template_tuple in self.matcher.matches:
-            h,w = template_tuple[1].shape
-            # top_left = loc
-            # bottom_right = (top_left[0] + int(w * scale), top_left[1] + int(h * scale))
+        self.gui_info.clear()
+        self.log_text.clear()
+        for loc, scale, score, template_tuple in self.matcher.matches:
+            path = template_tuple[0].split('\\')[-1]
+            name = path.split('.')[0]
+            h,w = template_tuple[1].shape # 중심좌표
+            gui_dic = {} # gui 유사도, 좌표, ui name 탐색
             mc_loc = [loc[0] + int(w * scale * 0.5), loc[1] + int(h * scale * 0.5)]
-            self.gui_locations.append(mc_loc)
+            gui_dic[name] = ( score , mc_loc )
+            self.gui_info.append(gui_dic)
       
             self.log_text.append(f"파일명 : {template_tuple[0]}, 좌표 : ( {mc_loc[0]} , {mc_loc[1]} )")
         
         self.gui_pixmap = self.view_resized_img_on_widget(result_image,self.gui_result.width(),self.gui_result.height())
         self.gui_result.setPixmap(self.gui_pixmap)
-        
+        self.showNormal()
 
     def open_browser(self):
-        
-        options = QtWidgets.QFileDialog.Options()
-        options |= QtWidgets.QFileDialog.ReadOnly  # 파일을 읽기 전용으로 열기
-        file_filter = "Images (*.png *.jpg *.jpeg *.bmp)"  # 이미지 파일 필터 설정
-        folder_dir, _ = QtWidgets.QFileDialog.getOpenFileName(self, "이미지 파일 선택", "", file_filter, options=options)
-        # folder_dir = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select Directory')
+        # options = QtWidgets.QFileDialog.Options()
+        # options |= QtWidgets.QFileDialog.ReadOnly  # 파일을 읽기 전용으로 열기
+        # file_filter = "Images (*.png *.jpg *.jpeg *.bmp)"  # 이미지 파일 필터 설정
+        # folder_dir, _ = QtWidgets.QFileDialog.getOpenFileName(self, "이미지 파일 선택", "", file_filter, options=options)
+        folder_dir = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select Directory')
         if folder_dir:
             self.gui_folder.setText(folder_dir)
             self.gui_img_files = get_all_images(folder_dir)
             self.gui_sub_folders = get_subfolders(folder_dir)
 
 
-    def match_gui_templates(self): 
+    def match_gui_templates(self):
+        
+        # process 접근
+        msg = self.handler.connect_application_by_handler()
+        self.log_text.append(msg)
         # folder_dir = 'screen/UI'
         if len(self.gui_img_files) < 1:
-            self.progress_bar.setFormat(f"경로 '{self.gui_folder.text()}' 상에 폴더가 비어있습니다.")
+            self.progress_bar.setFormat(f"경로 :'{self.gui_folder.text()}' 내에 이미지 파일이 없습니다.")
             return
         
         # 윈도우 창 최소화            

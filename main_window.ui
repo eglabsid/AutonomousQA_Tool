@@ -269,14 +269,14 @@
                 </widget>
                </item>
                <item>
-                <widget class="QLineEdit" name="process_name"/>
-               </item>
-               <item>
-                <widget class="QCheckBox" name="pcheck">
-                 <property name="text">
-                  <string/>
+                <widget class="QComboBox" name="process_list">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
                  </property>
-                 <property name="checked">
+                 <property name="editable">
                   <bool>true</bool>
                  </property>
                 </widget>

@@ -1,10 +1,17 @@
 
 from PyQt5.QtCore import QThread, Qt, pyqtSignal
 import numpy as np
-# import cv2
+
+from enum import Enum
+class PatternType(Enum):
+    CLICK = 0
+    TYPING = 1
+    MATCH = 2
+    DELAY = 3
+    
 
 
-class Routine(QThread):
+class RepeatPattern(QThread):
 
     def __init__(self, items, handler):
         super().__init__()
@@ -12,10 +19,10 @@ class Routine(QThread):
         self.items = items
         self.handler = handler
         
-        self.finished = pyqtSignal(str)
+        self.message = pyqtSignal(str)
         # self.detected_objects = pyqtSignal(str, list) 
 
-    def run(self):
+    def run(self): # ctrl+esc 로 종료 메시지
         while self.running:
             for item in self.items:
                 if not self.running:
@@ -43,7 +50,8 @@ class Routine(QThread):
 
                         
                     print(f"실행 {data}")
-                self.msleep(500)
+                    
+                # self.msleep(int(1000*delay))
 
     def stop(self):
         self.running = False
