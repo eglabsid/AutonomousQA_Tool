@@ -97,15 +97,14 @@ class UITemplateMatcher(QThread):
         self.stop()
         
     def draw_matches(self, image):
-        for (loc, scale, score, template) in self.matches:
+        for i,(loc, scale, score, template) in enumerate(self.matches):
             top_left = loc
             bottom_right = (top_left[0] + int(template[1].shape[1] * scale), top_left[1] + int(template[1].shape[0] * scale))
-            cv2.rectangle(image, top_left, bottom_right, (0, 255, 0), 2)
+            cv2.rectangle(image, top_left, bottom_right, (0, 255, 0), 4)
             # cv2.putText(image, f'{score:.2f}', (top_left[0], top_left[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
             cv2.putText(image, f'{template[0]}', (top_left[0], top_left[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
+            cv2.imwrite(f"test_result/{i}.jpg",image)
         return image
-    
-    
         
 class TemplateMatcher:
     def __init__(self, template, scale_range, scale_step, threshold=0.8):

@@ -7,7 +7,7 @@ from src.action_dialog import ActionDialog
 from src.image_dialog import ImageDialog
 from src.interval_dialog import IntervalDialog
 
-from utils.common import *
+from utils.process_handler import WindowProcessHandler
 from utils.routine import Routine
 from utils.template_matcher import UITemplateMatcher, TemplateMatcher, get_all_images, get_subfolders
 
@@ -73,7 +73,9 @@ class mainWindow(QtWidgets.QMainWindow):
         
         self.gui_pixmap = QPixmap()
         
-        self.process_name.setText('GeometryDash.exe')
+        # process_name = 'GeometryDash.exe'
+        process_name = 'Geometry Dash'
+        self.process_name.setText(process_name)
         self.process_name.setEnabled(False)
         self.pcheck.stateChanged.connect(self.toggle_process_name)
         
@@ -83,14 +85,17 @@ class mainWindow(QtWidgets.QMainWindow):
 
         self.worker = None
         
+        # 프로세스 handler
+        self.handler = None
         
     def resizeEvent(self, event):
         scaled_pixmap = self.gui_pixmap.scaled(self.gui_result.size(), Qt.KeepAspectRatio)
         self.gui_result.setPixmap(scaled_pixmap)
 
     def confirm_running_process(self):
-        txt_log = connect_application_by_process_name(self.process_name.text())
-        self.log_text.append(txt_log)
+        self.handler = WindowProcessHandler(self.process_name.text())
+        self.handler.connect_application_by_handler()
+        # self.log_text.append(txt_log)
         
     def toggle_process_name(self, state):
         if state == 2:  # QCheckBox가 체크된 상태
@@ -194,7 +199,12 @@ class mainWindow(QtWidgets.QMainWindow):
         
 
     def open_browser(self):
-        folder_dir = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select Directory')
+        
+        options = QtWidgets.QFileDialog.Options()
+        options |= QtWidgets.QFileDialog.ReadOnly  # 파일을 읽기 전용으로 열기
+        file_filter = "Images (*.png *.jpg *.jpeg *.bmp)"  # 이미지 파일 필터 설정
+        folder_dir, _ = QtWidgets.QFileDialog.getOpenFileName(self, "이미지 파일 선택", "", file_filter, options=options)
+        # folder_dir = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select Directory')
         if folder_dir:
             self.gui_folder.setText(folder_dir)
             self.gui_img_files = get_all_images(folder_dir)

@@ -6,10 +6,12 @@ import numpy as np
 
 class Routine(QThread):
 
-    def __init__(self, items):
+    def __init__(self, items, handler):
         super().__init__()
         self.running = True
         self.items = items
+        self.handler = handler
+        
         self.finished = pyqtSignal(str)
         # self.detected_objects = pyqtSignal(str, list) 
 
