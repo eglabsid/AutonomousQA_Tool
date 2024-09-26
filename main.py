@@ -7,6 +7,7 @@ from src.action_dialog import ActionDialog
 from src.image_dialog import ImageDialog
 from src.interval_dialog import IntervalDialog
 
+from utils.common import *
 from utils.routine import Routine
 from utils.template_matcher import UITemplateMatcher, TemplateMatcher, get_all_images, get_subfolders
 
@@ -57,7 +58,8 @@ class mainWindow(QtWidgets.QMainWindow):
             elif n == 7:
                 button.clicked.connect(self.stop_routine)
             
-        
+        # gui 및 process 확인 기능
+        self.confirm_process.clicked.connect(self.confirm_running_process)
         self.gui_search.clicked.connect(self.match_gui_templates) 
         
         # self.gui_img_files = []
@@ -66,10 +68,12 @@ class mainWindow(QtWidgets.QMainWindow):
         self.gui_folder.setText(folder_dir)
         self.gui_img_files = get_all_images(folder_dir)
         self.gui_sub_folders = get_subfolders(folder_dir)
-            
+        self.gui_locations = []
         self.gui_browser.clicked.connect(self.open_browser) 
         
-        self.process_name.setText('Geometry Dash')
+        self.gui_pixmap = QPixmap()
+        
+        self.process_name.setText('GeometryDash.exe')
         self.process_name.setEnabled(False)
         self.pcheck.stateChanged.connect(self.toggle_process_name)
         
@@ -78,12 +82,15 @@ class mainWindow(QtWidgets.QMainWindow):
         self.log_text.setReadOnly(True)
 
         self.worker = None
-        self.gui_pixmap = QPixmap()
+        
         
     def resizeEvent(self, event):
         scaled_pixmap = self.gui_pixmap.scaled(self.gui_result.size(), Qt.KeepAspectRatio)
         self.gui_result.setPixmap(scaled_pixmap)
 
+    def confirm_running_process(self):
+        txt_log = connect_application_by_process_name(self.process_name.text())
+        self.log_text.append(txt_log)
         
     def toggle_process_name(self, state):
         if state == 2:  # QCheckBox가 체크된 상태
@@ -173,6 +180,15 @@ class mainWindow(QtWidgets.QMainWindow):
         self.progress_bar.setFormat(" Completed!")
         self.gui_search.setEnabled(True)
         
+        for loc, scale, result, template_tuple in self.matcher.matches:
+            h,w = template_tuple[1].shape
+            # top_left = loc
+            # bottom_right = (top_left[0] + int(w * scale), top_left[1] + int(h * scale))
+            mc_loc = [loc[0] + int(w * scale * 0.5), loc[1] + int(h * scale * 0.5)]
+            self.gui_locations.append(mc_loc)
+      
+            self.log_text.append(f"파일명 : {template_tuple[0]}, 좌표 : ( {mc_loc[0]} , {mc_loc[1]} )")
+        
         self.gui_pixmap = self.view_resized_img_on_widget(result_image,self.gui_result.width(),self.gui_result.height())
         self.gui_result.setPixmap(self.gui_pixmap)
         
@@ -193,7 +209,7 @@ class mainWindow(QtWidgets.QMainWindow):
         
         # 윈도우 창 최소화            
         self.showMinimized()
-        QThread.msleep(int(100))
+        QThread.msleep(int(200))
         # 사용 예제
         # templates = [cv2.imread(file, 0) for file in self.gui_img_files]
         templates = []
@@ -210,7 +226,7 @@ class mainWindow(QtWidgets.QMainWindow):
             image = np.array(screenshot)
             image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
         
-            self.matcher = UITemplateMatcher(image,templates, scale_range=(0.9, 1.2), scale_step=0.1, threshold=0.7)
+            self.matcher = UITemplateMatcher(image,templates, scale_range=(0.7, 1.2), scale_step=0.15 , threshold=0.7)
             self.matcher.update_progress.connect(self.update_status_bar)  # 시그널 연결
             self.matcher.finished.connect(self.on_finished)  # 작업 완료 시그널 연결
             self.matcher.start()  # QThread 시작
