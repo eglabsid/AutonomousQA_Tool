@@ -1,24 +1,40 @@
 import sys,os
 from PyQt5 import uic, QtWidgets
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon, QImage, QPixmap
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
 
 from src.action_dialog import ActionDialog
 from src.image_dialog import ImageDialog
 from src.interval_dialog import IntervalDialog
 
+from utils.process_handler import WindowProcessHandler
 from utils.routine import Routine
+from utils.template_matcher import UITemplateMatcher, TemplateMatcher, get_all_images, get_subfolders
+
+# opencv
+import cv2
+
+import numpy as np
+import mss
+import mss.tools
 
 window_ui = 'main_window.ui'
 
 class mainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super(mainWindow, self).__init__()
-
+        self.initUI()
+        
+    def initUI(self):
         # UI 파일 로드
         uic.loadUi(window_ui, self)
-        
         self.centralWidget.setLayout(self.main_layout)
+        
+        self.progress_bar = QtWidgets.QProgressBar()
+        self.progress_label = QtWidgets.QLabel("Progress:")
+        self.statusbar.addWidget(self.progress_label)
+        self.statusbar.addWidget(self.progress_bar)
+        self.setStatusBar(self.statusbar)
         
         self.setWindowTitle("AutoQA Tool (ver.Dev)")
         self.setWindowIcon(QIcon('images/icon/eglab.ico'))
@@ -34,13 +50,34 @@ class mainWindow(QtWidgets.QMainWindow):
             elif n == 1:
                 button.clicked.connect(self.add_image)
             elif n == 2:
-                button.clicked.connect(self.delete_curAction)
+                button.clicked.connect(self.delete_cur_action)
             elif n == 4:
                 button.clicked.connect(self.set_interval)
             elif n == 6:
                 button.clicked.connect(self.start_routine)
             elif n == 7:
                 button.clicked.connect(self.stop_routine)
+            
+        # gui 및 process 확인 기능
+        self.confirm_process.clicked.connect(self.confirm_running_process)
+        self.gui_search.clicked.connect(self.match_gui_templates) 
+        
+        # self.gui_img_files = []
+        # self.gui_sub_folders = []
+        folder_dir = 'screen/UI'
+        self.gui_folder.setText(folder_dir)
+        self.gui_img_files = get_all_images(folder_dir)
+        self.gui_sub_folders = get_subfolders(folder_dir)
+        self.gui_locations = []
+        self.gui_browser.clicked.connect(self.open_browser) 
+        
+        self.gui_pixmap = QPixmap()
+        
+        # process_name = 'GeometryDash.exe'
+        process_name = 'Geometry Dash'
+        self.process_name.setText(process_name)
+        self.process_name.setEnabled(False)
+        self.pcheck.stateChanged.connect(self.toggle_process_name)
         
         self.preset_combo.addItems([f"프리셋 {i}" for i in range(0, 10)])  # 예시 프리셋 추가
         self.preset_combo.currentIndexChanged.connect(self.update_preset)                
@@ -48,12 +85,33 @@ class mainWindow(QtWidgets.QMainWindow):
 
         self.worker = None
         
+        # 프로세스 handler
+        self.handler = None
+        
+    def resizeEvent(self, event):
+        scaled_pixmap = self.gui_pixmap.scaled(self.gui_result.size(), Qt.KeepAspectRatio)
+        self.gui_result.setPixmap(scaled_pixmap)
+
+    def confirm_running_process(self):
+        self.handler = WindowProcessHandler(self.process_name.text())
+        self.handler.connect_application_by_handler()
+        # self.log_text.append(txt_log)
+        
+    def toggle_process_name(self, state):
+        if state == 2:  # QCheckBox가 체크된 상태
+            self.process_name.setEnabled(False)
+        else:  # QCheckBox가 체크 해제된 상태
+            self.process_name.setEnabled(True)
+    
     def start_routine(self):
         if self.worker is None or not self.worker.isRunning():
             actions = [self.list_widget.item(i) for i in range(self.list_widget.count())]
             self.worker = Routine(actions)
             self.log_text.append("루틴이 시작되었습니다.")
             self.worker.start()
+            
+            # 윈도우 창 최소화            
+            self.showMinimized()
 
     def stop_routine(self):
         if self.worker is not None and self.worker.isRunning():
@@ -72,13 +130,13 @@ class mainWindow(QtWidgets.QMainWindow):
             self.log_text.append(f"대기Action 추가 : {item.data(Qt.UserRole)}")
             self.list_widget.addItem(item)
             
-    def delete_curAction(self):
+    def delete_cur_action(self):
         selectedRow = self.list_widget.currentRow()
         if selectedRow != -1:
             selectedItem = self.list_widget.item(selectedRow)
             self.log_text.append(f"제거 : {selectedItem.text()}")
             self.list_widget.takeItem(selectedRow)
-            
+          
     def update_preset(self, idx):
         self.list_widget.clear()
         self.preset_index = idx
@@ -117,7 +175,88 @@ class mainWindow(QtWidgets.QMainWindow):
             self.log_text.append(f"이미지클릭Action 추가{os.path.basename(dialog._imgPath)}, 유사도:{dialog.confidence.value()}")
             self.list_widget.addItem(item)
 
+    def update_status_bar(self, current, total):
+        self.progress_bar.setMaximum(total)
+        self.progress_bar.setValue(current)
+        self.progress_bar.setFormat("{0}%".format(int(current/total*100)))
+        self.gui_search.setEnabled(False)
 
+    def on_finished(self, result_image):
+        self.progress_bar.setFormat(" Completed!")
+        self.gui_search.setEnabled(True)
+        
+        for loc, scale, result, template_tuple in self.matcher.matches:
+            h,w = template_tuple[1].shape
+            # top_left = loc
+            # bottom_right = (top_left[0] + int(w * scale), top_left[1] + int(h * scale))
+            mc_loc = [loc[0] + int(w * scale * 0.5), loc[1] + int(h * scale * 0.5)]
+            self.gui_locations.append(mc_loc)
+      
+            self.log_text.append(f"파일명 : {template_tuple[0]}, 좌표 : ( {mc_loc[0]} , {mc_loc[1]} )")
+        
+        self.gui_pixmap = self.view_resized_img_on_widget(result_image,self.gui_result.width(),self.gui_result.height())
+        self.gui_result.setPixmap(self.gui_pixmap)
+        
+
+    def open_browser(self):
+        
+        options = QtWidgets.QFileDialog.Options()
+        options |= QtWidgets.QFileDialog.ReadOnly  # 파일을 읽기 전용으로 열기
+        file_filter = "Images (*.png *.jpg *.jpeg *.bmp)"  # 이미지 파일 필터 설정
+        folder_dir, _ = QtWidgets.QFileDialog.getOpenFileName(self, "이미지 파일 선택", "", file_filter, options=options)
+        # folder_dir = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select Directory')
+        if folder_dir:
+            self.gui_folder.setText(folder_dir)
+            self.gui_img_files = get_all_images(folder_dir)
+            self.gui_sub_folders = get_subfolders(folder_dir)
+
+
+    def match_gui_templates(self): 
+        # folder_dir = 'screen/UI'
+        if len(self.gui_img_files) < 1:
+            self.progress_bar.setFormat(f"경로 '{self.gui_folder.text()}' 상에 폴더가 비어있습니다.")
+            return
+        
+        # 윈도우 창 최소화            
+        self.showMinimized()
+        QThread.msleep(int(200))
+        # 사용 예제
+        # templates = [cv2.imread(file, 0) for file in self.gui_img_files]
+        templates = []
+        for file in self.gui_img_files:
+            name = file.split('/')[-1]
+            name = name.split('.')[0]
+            template = {}
+            template[name] = cv2.imread(file,0)
+            templates.append(template)
+        
+        with mss.mss() as sct:
+            monitor = sct.monitors[1]
+            screenshot = sct.grab(monitor) # screenshot 
+            image = np.array(screenshot)
+            image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
+        
+            self.matcher = UITemplateMatcher(image,templates, scale_range=(0.7, 1.2), scale_step=0.15 , threshold=0.7)
+            self.matcher.update_progress.connect(self.update_status_bar)  # 시그널 연결
+            self.matcher.finished.connect(self.on_finished)  # 작업 완료 시그널 연결
+            self.matcher.start()  # QThread 시작
+
+    
+    def view_resized_img_on_widget(self,frame, width, height):
+        # PyQt5 프레임에 표시
+        h, w, _ = frame.shape # _ 는 channel
+        bytes_per_line = 3 * w
+
+        frame_bytes = frame.tobytes()
+        q_img = QImage(frame_bytes, w, h, bytes_per_line, QImage.Format_RGB888)
+
+        # QImage를 리사이즈
+        resized_img = q_img.scaled(width,height)
+        return QPixmap.fromImage(resized_img)
+    
+    def closeEvent(self, event):
+        event.accept()
+        
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     window = mainWindow()

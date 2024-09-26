@@ -128,16 +128,6 @@
            </property>
           </widget>
          </item>
-         <item>
-          <widget class="QLabel" name="screen">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="scaledContents">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
         </layout>
        </item>
        <item>
@@ -161,7 +151,7 @@
      <x>0</x>
      <y>0</y>
      <width>870</width>
-     <height>37</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menumenu">
