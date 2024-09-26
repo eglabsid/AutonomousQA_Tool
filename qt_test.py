@@ -1,10 +1,13 @@
 import cv2
 import numpy as np
+import threading
 import os
 import glob
-import threading
+import timeit
+from tqdm import tqdm
+
 from PyQt5.QtWidgets import QApplication, QMainWindow, QStatusBar
-from PyQt5.QtCore import pyqtSignal, QThread
+from PyQt5.QtCore import QThread, pyqtSignal
 
 def get_subfolders(root_folder):
     subfolders = [f.path for f in os.scandir(root_folder) if f.is_dir()]
@@ -23,40 +26,41 @@ def get_all_images(root_folder):
 
     return all_images
 
-class TemplateMatcher(QThread):
-    update_progress = pyqtSignal(int, int)  # 현재 진행 상황과 총 작업 수를 전달하는 시그널
-    finished = pyqtSignal(np.ndarray)  # 작업 완료 시 결과 이미지를 전달하는 시그널
-
-    def __init__(self, templates, scale_range, scale_step, threshold=0.8, gray_frame=None):
-        super().__init__()
+class TemplateMatcher:
+    def __init__(self, templates, scale_range, scale_step, threshold=0.8, status_bar=None):
         self.templates = templates
         self.scale_range = scale_range
         self.scale_step = scale_step
         self.threshold = threshold
         self.matches = []
         self.lock = threading.Lock()
-        self.gray_frame = gray_frame
+        self.status_bar = status_bar
 
-    def match_templates(self, template, scale):
+    def match_templates(self, gray_frame, template, scale, pbar):
         resized_template = cv2.resize(template, (0, 0), fx=scale, fy=scale)
-        result = cv2.matchTemplate(self.gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
+        result = cv2.matchTemplate(gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
         locations = np.where(result >= self.threshold)
 
         with self.lock:
             for loc in zip(*locations[::-1]):
                 self.matches.append((loc, scale, result[loc[1], loc[0]], template))
+        
+        pbar.update(1)  # 스레드 완료 시 진행 상황 업데이트
+        if self.status_bar:
+            self.status_bar.showMessage(f"Progress: {pbar.n}/{pbar.total}")
 
-    def run(self):
+    def get_matches(self, gray_frame):
+        threads = []
         total_tasks = len(self.templates) * len(np.arange(self.scale_range[0], self.scale_range[1], self.scale_step))
-        current_task = 0
-        for template in self.templates:
-            for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_step):
-                self.match_templates(template, scale)
-                current_task += 1
-                self.update_progress.emit(current_task, total_tasks)
+        with tqdm(total=total_tasks, desc="Matching templates") as pbar:
+            for template in self.templates:
+                for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_step):
+                    thread = threading.Thread(target=self.match_templates, args=(gray_frame, template, scale, pbar))
+                    threads.append(thread)
+                    thread.start()
 
-        result_image = self.draw_matches(cv2.imread('screen/ui_test.jpg'))
-        self.finished.emit(result_image)
+            for thread in threads:
+                thread.join()
 
     def draw_matches(self, image):
         for (loc, scale, score, template) in self.matches:
@@ -66,6 +70,10 @@ class TemplateMatcher(QThread):
             # cv2.putText(image, f'{score:.2f}', (top_left[0], top_left[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
         return image
 
+class ScreenCaptureThread(QThread):
+    
+    frame_captured = pyqtSignal(np.ndarray, tuple, np.ndarray)
+    
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -78,13 +86,6 @@ class MainWindow(QMainWindow):
         self.setGeometry(100, 100, 800, 600)
         self.show()
 
-    def update_status_bar(self, current, total):
-        self.status_bar.showMessage(f"Progress: {current}/{total}")
-
-    def on_finished(self, result_image):
-        cv2.imwrite('result_matchs.jpg', result_image)
-        self.status_bar.showMessage("Matching completed!")
-
     def run_template_matching(self):
         folder_dir = 'screen/UI'
         image_files = get_all_images(folder_dir)
@@ -93,10 +94,13 @@ class MainWindow(QMainWindow):
         templates = [cv2.imread(file, 0) for file in image_files]
         image = cv2.imread('screen/ui_test.jpg')
         gray_frame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        self.matcher = TemplateMatcher(templates, scale_range=(0.9, 1.2), scale_step=0.1, threshold=0.7, gray_frame=gray_frame)
-        self.matcher.update_progress.connect(self.update_status_bar)  # 시그널 연결
-        self.matcher.finished.connect(self.on_finished)  # 작업 완료 시그널 연결
-        self.matcher.start()  # QThread 시작
+        matcher = TemplateMatcher(templates, scale_range=(0.9, 1.2), scale_step=0.1, threshold=0.7, status_bar=self.status_bar)
+        
+        matcher.get_matches(gray_frame)
+        
+        # 매치 결과를 이미지에 그리기
+        result_image = matcher.draw_matches(image)
+        cv2.imwrite('result_matchs.jpg', result_image)
 
 def main():
     app = QApplication([])
@@ -105,4 +109,5 @@ def main():
     app.exec_()
 
 if __name__ == "__main__":
-    main()
+    execution_time = timeit.timeit('main()', globals=globals(), number=1)
+    print(f"Execution time: {execution_time} seconds")

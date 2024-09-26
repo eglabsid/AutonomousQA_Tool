@@ -4,6 +4,8 @@ import threading
 
 import os
 import glob
+from tqdm import tqdm
+
 from PyQt5.QtWidgets import QApplication, QMainWindow, QStatusBar
 from PyQt5.QtCore import pyqtSignal, QThread
 
@@ -28,8 +30,9 @@ class UITemplateMatcher(QThread):
     update_progress = pyqtSignal(int, int)  # 현재 진행 상황과 총 작업 수를 전달하는 시그널
     finished = pyqtSignal(np.ndarray)  # 작업 완료 시 결과 이미지를 전달하는 시그널
 
-    __slot__ = ['frame','templates','scale_range','scale_step','threshold','lock','gray_frame','running']
-    def __init__(self, frame, templates, scale_range, scale_step, threshold=0.8, gray_frame=None):
+    __slot__ = ['frame','templates','scale_range','scale_step','threshold','lock']
+    
+    def __init__(self, frame, templates, scale_range, scale_step, threshold=0.8):
         super().__init__()
         self.frame = frame
         self.templates = templates
@@ -38,49 +41,61 @@ class UITemplateMatcher(QThread):
         self.threshold = threshold
         self.matches = []
         self.lock = threading.Lock()
-        self.gray_frame = gray_frame
+        self.gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         
-        self.running = True
-
-    def match_templates(self, template, scale):
-        resized_template = cv2.resize(template, (0, 0), fx=scale, fy=scale)
+    def match_templates(self, template, scale, pbar):
+        # Dict 처리
+        template_tuple = [ (k,v) for k,v in template.items()][0]
+        # name = template_tuple[0]
+        img = template_tuple[1]
+        
+        resized_template = cv2.resize(img, (0, 0), fx=scale, fy=scale)
         result = cv2.matchTemplate(self.gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
         locations = np.where(result >= self.threshold)
 
+        self.current_task += 1
+        pbar.update(1)  # 스레드 완료 시 진행 상황 업데이트
+        self.update_progress.emit(self.current_task, self.total_tasks)
+                    
         with self.lock:
             for loc in zip(*locations[::-1]):
-                self.matches.append((loc, scale, result[loc[1], loc[0]], template))
-
+                self.matches.append((loc, scale, result[loc[1], loc[0]], template_tuple))
+        
     def run(self):
-        while self.running:
-            total_tasks = len(self.templates) * len(np.arange(self.scale_range[0], self.scale_range[1], self.scale_step))
-            current_task = 0
+        threads = []
+        self.total_tasks = len(self.templates) * len(np.arange(self.scale_range[0], self.scale_range[1], self.scale_step))
+        self.current_task = 0
+        with tqdm(total=self.total_tasks, desc="Matching templates") as pbar:
             for template in self.templates:
                 for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_step):
-                    self.match_templates(template, scale)
-                    current_task += 1
-                    self.update_progress.emit(current_task, total_tasks)
+                    thread = threading.Thread(target=self.match_templates, args=(template, scale, pbar))
+                    threads.append(thread)
+                    thread.start()
 
+                for thread in threads:
+                    thread.join()
+                    
             result_image = self.draw_matches(self.frame)
             self.finished.emit(result_image)
     
     def stop(self):
-        self.running = False
-        self.wait()
+        # self.running = False
+        self.stop()
         
     def draw_matches(self, image):
         for (loc, scale, score, template) in self.matches:
             top_left = loc
-            bottom_right = (top_left[0] + int(template.shape[1] * scale), top_left[1] + int(template.shape[0] * scale))
+            bottom_right = (top_left[0] + int(template[1].shape[1] * scale), top_left[1] + int(template[1].shape[0] * scale))
             cv2.rectangle(image, top_left, bottom_right, (0, 255, 0), 2)
             # cv2.putText(image, f'{score:.2f}', (top_left[0], top_left[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
+            cv2.putText(image, f'{template[0]}', (top_left[0], top_left[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
         return image
     
     
         
 class TemplateMatcher:
     def __init__(self, template, scale_range, scale_step, threshold=0.8):
-        self.template = template
+        self.template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
         self.scale_range = scale_range
         self.scale_step = scale_step
         # template 하나에 대해서만 추출할 경우
@@ -92,49 +107,98 @@ class TemplateMatcher:
         self.threshold = threshold
         self.matches = []
         self.lock = threading.Lock()
+        # current progress state
+        self.current_task = 0
+        self.total_task = 0
+        self.templates = []
 
-    def match_templates(self, gray_frame, scale):
+    def match_templates(self, gray_frame, scale, pbar):
         resized_template = cv2.resize(self.template, (0, 0), fx=scale, fy=scale)
         result = cv2.matchTemplate(gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
         locations = np.where(result >= self.threshold)
 
+        pbar.update(1)  # 스레드 완료 시 진행 상황 업데이트
+        self.current_task += 1
         with self.lock:
             for loc in zip(*locations[::-1]):
                 self.matches.append((loc, scale, result[loc[1], loc[0]]))
 
-    def match_a_template(self, gray_frame, scale):
+    def match_a_template(self, gray_frame, scale, pbar):
         resized_template = cv2.resize(self.template, (0, 0), fx=scale, fy=scale)
         result = cv2.matchTemplate(gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
         min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
 
+        pbar.update(1)  # 스레드 완료 시 진행 상황 업데이트
+        self.current_task += 1
         with self.lock:
             if max_val > self.best_val:
                 self.best_val = max_val
                 self.best_match = resized_template
                 self.best_scale = scale
                 self.best_loc = max_loc
-                
-    def get_matches(self, gray_frame):
-        threads = []
-        for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_step):
-            thread = threading.Thread(target=self.match_templates, args=(gray_frame, scale))
-            threads.append(thread)
-            thread.start()
+    
+    def match_mixed_templates(self, gray_frame, template_tuple, scale, pbar):
+        
+        template = template_tuple[1]
+        
+        resized_template = cv2.resize(template, (0, 0), fx=scale, fy=scale)
+        result = cv2.matchTemplate(gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
+        locations = np.where(result >= self.threshold)
 
-        for thread in threads:
-            thread.join()
+        pbar.update(1)  # 스레드 완료 시 진행 상황 업데이트
+        self.current_task += 1
+        with self.lock:
+            for loc in zip(*locations[::-1]):
+                self.matches.append((loc, scale, result[loc[1], loc[0]], template_tuple))
+    
+    # templates 는 dictionary를 갖고 있는 list 타입
+    def get_mixed_match(self, image, templates):
+        
+        gray_frame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        threads = []
+        self.total_task = len(templates) * len(np.arange(self.scale_range[0], self.scale_range[1], self.scale_step))
+        self.current_task = 0
+        with tqdm(total=self.total_task, desc="Matching templates") as pbar:
+            for template in templates:
+                # Dict 처리
+                template_tuple = [ (k,v) for k,v in template.items()][0]
+                # template_tuple[1] = cv2.cvtColor(template_tuple[1], cv2.COLOR_BGR2GRAY)
+                for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_step):
+                    thread = threading.Thread(target=self.match_mixed_templates, args=(gray_frame, template_tuple, scale, pbar))
+                    threads.append(thread)
+                    thread.start()
+
+                for thread in threads:
+                    thread.join()
+                
+    def get_matches(self, image):
+        threads = []
+        total_tasks = len(np.arange(self.scale_range[0], self.scale_range[1], self.scale_step))
+        with tqdm(total=total_tasks, desc="Matching templates") as pbar:
+            gray_frame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_step):
+                thread = threading.Thread(target=self.match_templates, args=(gray_frame, scale, pbar))
+                threads.append(thread)
+                thread.start()
+
+            for thread in threads:
+                thread.join()
 
         return self.matches
 
-    def get_a_match(self, gray_frame):
+    def get_a_match(self, image):
         threads = []
-        for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_step):
-            thread = threading.Thread(target=self.match_a_template, args=(gray_frame, scale))
-            threads.append(thread)
-            thread.start()
+        total_tasks = len(np.arange(self.scale_range[0], self.scale_range[1], self.scale_step))
+        with tqdm(total=total_tasks, desc="Matching templates") as pbar:
+            gray_frame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_step):
+                thread = threading.Thread(target=self.match_a_template, args=(gray_frame, scale, pbar))
+                threads.append(thread)
+                thread.start()
 
-        for thread in threads:
-            thread.join()
+            for thread in threads:
+                thread.join()
 
         return self.best_val, self.best_match, self.best_scale, self.best_loc
     
@@ -144,6 +208,15 @@ class TemplateMatcher:
             bottom_right = (top_left[0] + int(self.template.shape[1] * scale), top_left[1] + int(self.template.shape[0] * scale))
             cv2.rectangle(image, top_left, bottom_right, (0, 255, 0), 2)
             # cv2.putText(image, f'{score:.2f}', (top_left[0], top_left[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
+        return image
+    
+    def draw_mixed_matches(self, image):
+        for (loc, scale, score, template) in self.matches:
+            top_left = loc
+            bottom_right = (top_left[0] + int(template[1].shape[1] * scale), top_left[1] + int(template[1].shape[0] * scale))
+            cv2.rectangle(image, top_left, bottom_right, (0, 255, 0), 2)
+            # cv2.putText(image, f'{score:.2f}', (top_left[0], top_left[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
+            cv2.putText(image, f'{template[0]}', (top_left[0], top_left[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
         return image
 
 

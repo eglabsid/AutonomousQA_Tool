@@ -4,7 +4,6 @@ import numpy as np
 # import cv2
 
 
-
 class Routine(QThread):
 
     def __init__(self, items):
@@ -12,7 +11,7 @@ class Routine(QThread):
         self.running = True
         self.items = items
         self.finished = pyqtSignal(str)
-        self.detected_objects = pyqtSignal(str, list) 
+        # self.detected_objects = pyqtSignal(str, list) 
 
     def run(self):
         while self.running:
