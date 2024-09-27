@@ -39,6 +39,7 @@ class ImageDialog(QtWidgets.QDialog):
         imgPath, _ = QtWidgets.QFileDialog.getOpenFileName(self, "이미지 파일 선택", "", file_filter, options=options)
 
         if imgPath:
+            imgPath = imgPath.split('.')[0]
             self.img_path.setText(imgPath)
             self._imgPath = imgPath
         else:

@@ -1,22 +1,38 @@
-import numpy as np
-import cv2
-import os
 
-import threading
+
+from functools import wraps
 from PIL import Image
 
+
+import numpy as np
+import cv2
+import os,sys
+
+import threading
+
 import platform
-from functools import wraps
+
+# import gc
+import psutil
+from memory_profiler import profile
+import pygetwindow as gw
+
+import warnings
+warnings.filterwarnings("ignore", message="Apply externally defined coinit_flags: 2")
 
 current_os = platform.system()
 if current_os == "Windows":
+    # pyqt5 와 pywinauto 충돌문제
+    # COM 라이브러리를 단일 스레드 아파트먼트(STA) 모드로 초기화
+    sys.coinit_flags = 2  # STA 모드 설정
     import ctypes
     from ctypes import windll
 
     import win32gui
     import win32ui
-    import win32con
-
+    # import win32con
+    import win32process
+    
     from pywinauto import Application, mouse, keyboard
 
 def create_directory_if_not_exists(dir_path):
@@ -42,14 +58,89 @@ class WindowProcessHandler():
     
     __slot__ = ['process_name','hwnd','window_process']
     
-    def __init__(self,  process_name):
+    def __init__(self,  ):
         # DPI 인식 활성화
         ctypes.windll.shcore.SetProcessDpiAwareness(2)
         
         # self.frame = frame
-        self.process_name = process_name
-        self.hwnd = self.get_handler_of_window_process(process_name)
+        self.process_name = None
+        self.hwnd = None
         self.window_process = None
+
+    # 모든 프로세스 목록 가져오기
+    def get_running_process_list(self):
+        process_list = []
+        for proc in psutil.process_iter(['pid', 'name']):
+            process_info = proc.info
+            process_list.append(process_info)
+        process_list = sorted(process_list,key=lambda x:x['name'])
+        return process_list
+
+    # 특정 프로세스 찾기 (예: 'notepad.exe')
+    def find_process_by_name(self, process_name):
+        for proc in psutil.process_iter(['pid', 'name']):
+            if proc.info['name'] == process_name:
+                return proc
+        return None
+
+    def connect_application_by_process_name(self,process_name):
+        message = ""
+        # 실행 중인 프로세스 검색
+        proc = self.find_process_by_name(process_name)
+        if not proc:
+            message = f" '{process_name}' 해당 프로세스가 실행중이지 않습니다."
+            return message
+            
+        if proc.info['name'] == process_name:
+            message = self.check_process(proc)
+            print(message)
+
+            self.hwnd = self.get_handler_of_window_process(proc.info['name'])
+            # 윈도우 활성화
+            self.window_process = self.find_window_by_pid(proc.info['pid'])
+            if self.window_process:
+                self.window_process.activate()
+                message += "\n Window activated successfully!"
+            else:
+                message += "\n Window not found."
+                
+            print(message)
+            return message
+
+        message = f"Process '{process_name}' not found."
+        print(message)
+        return message
+
+    # 프로세스 ID를 기반으로 윈도우 찾기
+    @os_specific_task("Windows")
+    def find_window_by_pid(self,pid):
+        def callback(hwnd, pid):
+            _, found_pid = win32process.GetWindowThreadProcessId(hwnd)
+            if found_pid == pid:
+                windows.append(hwnd)
+            return True
+
+        windows = []
+        win32gui.EnumWindows(callback, pid)
+        if windows:
+            return gw.Win32Window(windows[0])
+        return None
+
+    # 프로세스 로드 상태 체크 함수
+    def check_process(self,proc):
+        message = f"Process {proc.info['name']} (PID: {proc.info['pid']}) is running."
+        try:
+            if proc.is_running():
+                cpu_usage = proc.cpu_percent(interval=1)
+                memory_info = proc.memory_info()
+                memory_usage = memory_info.rss / (1024 * 1024)  # 메모리 사용량 (MB)
+                message = f"CPU Usage: {cpu_usage}% \n"
+                message += f"Memory Usage: {memory_usage} MB"
+            else:
+                message = "Process is not running."
+        except psutil.NoSuchProcess:
+            message = "Process no longer exists."
+        return message
 
     @os_specific_task("Windows")
     def get_handler_of_window_process(self,process_name):
@@ -64,21 +155,32 @@ class WindowProcessHandler():
     
     @os_specific_task("Windows")
     def connect_application_by_handler(self):
-        app = Application().connect(handle=self.hwnd)
-        self.window_process = app.top_window()
-        self.window_process.set_focus()
+        message = ""
+        try :
+            self.hwnd = self.get_handler_of_window_process(self.process_name)
+            app = Application().connect(handle=self.hwnd)
+            self.window_process = app.top_window()
+            self.window_process.set_focus()
+            message += "Connect already running process"
+            
+        except Exception as e:
+            message += f"An unexpected error occurred: {e}"
+            # sys.exit(1)
+        return message        
     
     @os_specific_task("Windows")
     def mouseclick(self, button: str, coords: tuple):
         def task():
-            self.window_process.set_focus()
+            # self.window_process.set_focus()
+            self.window_process.activate()
             mouse.click(button=button, coords=coords)
         threading.Thread(target=task).start()
     
     @os_specific_task("Windows")
     def sendkey(self, key: str):
         def task():
-            self.window_process.set_focus()
+            # self.window_process.set_focus()
+            self.window_process.activate()
             keyboard.send_keys(key)
         threading.Thread(target=task).start()
     
@@ -140,14 +242,18 @@ class WindowProcessHandler():
         else:
             print("Failed to capture window")
             return None
+
+
         
 @os_specific_task("Windows")
 def main():
-    process_name = "Geometry Dash"  # 예: "Notepad", "Chrome" 등
+    process_name = "GeometryDash.exe"  # 예: "Notepad", "Chrome" 등
     # frame = cv2.imread('result.png',0)
-    handler = WindowProcessHandler(process_name)
+    handler = WindowProcessHandler()
+    handler.connect_application_by_process_name(process_name)
     # handler.captuer_screen_on_application()
-    handler.connect_application_by_handler()
+    # handler.connect_application_by_handler()
+    handler.window_process.activate()
     handler.mouseclick('left',(250,250))
     handler.sendkey('{SPACE}') 
     # {ENTER},{TAB},{ESC},{SPACE},{BACKSPACE} ex) 엔터 두번, {ENTER 2}
