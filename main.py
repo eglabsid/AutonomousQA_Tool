@@ -52,7 +52,7 @@ class mainWindow(QtWidgets.QMainWindow):
             elif n == 2:
                 button.clicked.connect(self.delete_cur_action)
             elif n == 4:
-                button.clicked.connect(self.set_interval)
+                button.clicked.connect(self.set_delay)
             elif n == 6:
                 button.clicked.connect(self.start_routine)
             elif n == 7:
@@ -77,15 +77,17 @@ class mainWindow(QtWidgets.QMainWindow):
         # self.process_name.setText(process_name)
         # self.process_name.setEnabled(False)
         # self.pcheck.stateChanged.connect(self.toggle_process_name)
-        process_name = 'GeometryDash.exe'
+        # process_name = 'GeometryDash.exe'
         self.handler = WindowProcessHandler()
-        self.handler.process_name = process_name
         
         # List-up Running Process
         proc_lst = self.handler.get_running_process_list()
         for proc in proc_lst:
             self.process_list.addItem(f"{proc['name']}")
         self.process_list.currentIndexChanged.connect(self.update_process_list)                
+        self.handler.process_name = self.process_list.currentText()
+        
+        
         
         self.preset_combo.addItems([f"프리셋 {i}" for i in range(0, 10)])  # 예시 프리셋 추가
         self.preset_combo.currentIndexChanged.connect(self.update_preset)                
@@ -198,7 +200,7 @@ class mainWindow(QtWidgets.QMainWindow):
         msg = self.handler.connect_application_by_process_name(cur_proc)
         self.log_text.append(msg)
             
-    def set_interval(self):
+    def set_delay(self):
         dialog = IntervalDialog(self)
         result = dialog.exec_()
 
@@ -297,7 +299,7 @@ class mainWindow(QtWidgets.QMainWindow):
             name, (score, mc_loc) = [[k,v] for k,v in info.items()][0]
             msg = f"Img:{name}, Coord:{mc_loc}, Act:{PatternType.CLICK.name}, Conf:{100-int(score*100)}"
             item = QtWidgets.QListWidgetItem(msg)
-            item.setData(Qt.UserRole, [PatternType.CLICK, name, mc_loc])
+            item.setData(Qt.UserRole, [PatternType.CLICK, [name, mc_loc]])
             self.action_sequence.addItem(item)
             msg = f"<< Add : [{name}, {PatternType.CLICK.name}]"
             self.log_text.append(msg)
