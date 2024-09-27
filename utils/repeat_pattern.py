@@ -8,7 +8,29 @@ class PatternType(Enum):
     TYPING = 1
     MATCH = 2
     DELAY = 3
+
+class StrEnum(str, Enum):
+    def _generate_next_value_(name, start, count, last_values):
+        return name
+
+    def __repr__(self):
+        return self.name
+
+    def __str__(self):
+        return self.name
     
+class SendKey(StrEnum):
+    ENTER = '{ENTER}'
+    TAB = '{TAB}'
+    ESC = '{ESC}'
+    SPACE = '{SPACE}'
+    BACKSPACE = '{BACKSPACE}'
+    DELETE = '{DELETE}'
+    UP = '{DOWN}'
+    LEFT = '{RIGHT}'
+    Shift = '+'
+    Ctrl = '^'
+    Alt = '%'
 
 
 class RepeatPattern(QThread):
@@ -20,38 +42,41 @@ class RepeatPattern(QThread):
         self.handler = handler
         
         self.message = pyqtSignal(str)
-        # self.detected_objects = pyqtSignal(str, list) 
+        # self.redirect = pyqtSignal(str) 
 
     def run(self): # ctrl+esc 로 종료 메시지
         while self.running:
-            for item in self.items:
-                if not self.running:
-                    break
-                data = item.data(Qt.UserRole)
+            # for item in self.items:
+            item = self.items.pop(0)
+                
+            if not self.running:
+                break
+            
+            data = item.data(Qt.UserRole)
 
-                if data:
-                    a = data[0]
-                    b = data[1]
-                    if a == 0:
-                        # pyautogui.click(int(b[0]), int(b[1]))    # 클릭
-                        pos_xy = list(map(int,b))
-                        # inputManager.move_mouse(pos_xy[0],pos_xy[1])
-                        # inputManager.click_mouse()
-                    elif a == 1:
-                        # pyautogui.press(b)   # 키 입력
-                        # inputManager.release_key(b)
-                        pass
-                    elif a == 2:
-                        
-                        self.finished.emit("이미지 탐색중")
-                        # image_path = os.path.abspath(b[0])
-                        image_path = b[0]
-                        print(f"이미지 절대 경로: {image_path}")
-
-                        
-                    print(f"실행 {data}")
+            if data:
+                a = data[0]
+                b = data[1]
+                if a == 0:
+                    # pyautogui.click(int(b[0]), int(b[1]))    # 클릭
+                    pos_xy = list(map(int,b))
+                    # inputManager.move_mouse(pos_xy[0],pos_xy[1])
+                    # inputManager.click_mouse()
+                elif a == 1:
+                    # pyautogui.press(b)   # 키 입력
+                    # inputManager.release_key(b)
+                    pass
+                elif a == 2:
                     
-                # self.msleep(int(1000*delay))
+                    self.finished.emit("이미지 탐색중")
+                    # image_path = os.path.abspath(b[0])
+                    image_path = b[0]
+                    print(f"이미지 절대 경로: {image_path}")
+
+                    
+                print(f"실행 {data}")
+                
+            # self.msleep(int(1000*delay))
 
     def stop(self):
         self.running = False

@@ -33,7 +33,7 @@ class ActionDialog(QtWidgets.QDialog):
         self.radio_key.toggled.connect(self.update_radio_btn)
         self.radio_pos.setChecked(True)
         
-        self.input_key.setMaxLength(1)
+        self.input_key.setMaxLength(15)
         self.input_key.setPlaceholderText("특정 Key")
         
         # 마우스 리스너 시작
