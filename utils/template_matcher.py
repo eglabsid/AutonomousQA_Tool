@@ -54,8 +54,8 @@ class UITemplateMatcher(QThread):
         best_match = None
         best_val = -1
         best_scale = 1.0
-        best_loc = (0, 0)
-                    
+        best_loc = (-1, -1)
+        is_match = False
         for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_step):
             resized_template = cv2.resize(img, (0, 0), fx=scale, fy=scale)
             result = cv2.matchTemplate(self.gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
@@ -66,13 +66,19 @@ class UITemplateMatcher(QThread):
             self.current_task += 1
             self.update_progress.emit(self.current_task,self.total_tasks)
             with self.lock:
-                if max_val > best_val and max_val >= self.threshold:
+                if max_val < self.threshold:
+                    continue
+                
+                if max_val > best_val:
                     best_val = max_val
                     best_match = resized_template
                     best_scale = scale
                     best_loc = max_loc
+                    is_match = True
         
         with self.lock:
+            if not is_match: # match 결과물이 없는 경우 예외처리
+                return
             self.matches.append((best_loc, best_scale, result[best_loc[1], best_loc[0]], template_tuple))
                 
     def run(self):
