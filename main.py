@@ -104,7 +104,7 @@ class mainWindow(QtWidgets.QMainWindow):
     # Function Section
     def start_routine(self):
         if self.repeater is None or not self.repeater.isRunning():
-            actions = [self.list_widget.item(i) for i in range(self.list_widget.count())]
+            actions = [self.action_sequence.item(i) for i in range(self.action_sequence.count())]
             self.repeater = RepeatPattern(actions, self.handler)
             self.log_text.append("루틴이 시작되었습니다.")
             self.repeater.start()
@@ -130,6 +130,8 @@ class mainWindow(QtWidgets.QMainWindow):
         self.gui_pixmap = self.view_resized_img_on_widget(result_image,self.gui_result.width(),self.gui_result.height())
         self.gui_result.setPixmap(self.gui_pixmap)
         self.showNormal()
+        
+        self.update_action_Sequence()
 
     def open_browser(self):
         # options = QtWidgets.QFileDialog.Options()
@@ -146,7 +148,7 @@ class mainWindow(QtWidgets.QMainWindow):
     def match_gui_templates(self):
         # process 접근
         # msg = self.handler.connect_application_by_handler()
-        msg = self.handler.get_handler_of_window_process(self.process_list.currentText())
+        msg = self.handler.connect_application_by_process_name(self.process_list.currentText())
         self.log_text.append(msg)
         # folder_dir = 'screen/UI'
         if len(self.gui_img_files) < 1:
@@ -154,7 +156,7 @@ class mainWindow(QtWidgets.QMainWindow):
             return
         
         # 윈도우 창 최소화            
-        self.showMinimized()
+        # self.showMinimized()
         QThread.msleep(int(200))
         # 사용 예제
         templates = []
@@ -172,7 +174,7 @@ class mainWindow(QtWidgets.QMainWindow):
             image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
 
             # threshhold = 0.9
-            self.matcher = UITemplateMatcher(image,templates, scale_range=(0.7, 1.2), scale_step=0.15)#,threshold=threshhold)
+            self.matcher = UITemplateMatcher(image,templates, scale_range=(0.7, 1.2), scale_step=0.1)#,threshold=threshhold)
             self.matcher.update_progress.connect(self.update_status_bar)  # 시그널 연결
             self.matcher.finished.connect(self.on_finished)  # 작업 완료 시그널 연결
             self.matcher.start()  # QThread 시작
@@ -205,14 +207,14 @@ class mainWindow(QtWidgets.QMainWindow):
             item.setData(Qt.UserRole, [PatternType.DELAY, [dialog.interval_line.text()]])
 
             self.log_text.append(f"대기Action 추가 : {item.data(Qt.UserRole)}")
-            self.list_widget.addItem(item)
+            self.action_sequence.addItem(item)
             
     def delete_cur_action(self):
-        selectedRow = self.list_widget.currentRow()
+        selectedRow = self.action_sequence.currentRow()
         if selectedRow != -1:
-            selectedItem = self.list_widget.item(selectedRow)
+            selectedItem = self.action_sequence.item(selectedRow)
             self.log_text.append(f"제거 : {selectedItem.text()}")
-            self.list_widget.takeItem(selectedRow)
+            self.action_sequence.takeItem(selectedRow)
     
     def add_actions(self):
         dialog = ActionDialog(self)  # ActionDialog 생성
@@ -228,7 +230,7 @@ class mainWindow(QtWidgets.QMainWindow):
                 item = QtWidgets.QListWidgetItem(f"키 입력 ({dialog.input_key.text()})")
                 item.setData(Qt.UserRole, [PatternType.TYPING, [dialog.input_key.text()]])
                 self.log_text.append(f"키Action 추가 : ({item.data(Qt.UserRole)})")
-            self.list_widget.addItem(item)
+            self.action_sequence.addItem(item)
         
     def add_image(self):
         dialog = ImageDialog(self)
@@ -240,17 +242,17 @@ class mainWindow(QtWidgets.QMainWindow):
             item.setData(Qt.UserRole, [PatternType.MATCH, [dialog._imgPath, dialog.confidence.value()]])
 
             self.log_text.append(f"이미지클릭Action 추가{os.path.basename(dialog._imgPath)}, 유사도:{dialog.confidence.value()}")
-            self.list_widget.addItem(item)
+            self.action_sequence.addItem(item)
 
     # Update Section
     def update_preset(self, idx):
-        self.list_widget.clear()
+        self.action_sequence.clear()
         self.preset_index = idx
         c_list = self.action_list[idx]
         
         for action in c_list:
             if action[0] == 0:
-                self.list_widget.addItem(f"클릭 (x,y : {action[1][0]}, {action[1][1]})")
+                self.action_sequence.addItem(f"클릭 (x,y : {action[1][0]}, {action[1][1]})")
                 
     def update_process_list(self):
         msg = ""
@@ -258,9 +260,9 @@ class mainWindow(QtWidgets.QMainWindow):
         msg = f"Selected Process: {selected_proc}"
         self.log_text.append(msg)
         
-        self.handler.process_name = selected_proc
-        msg = self.handler.connect_application_by_process_name(selected_proc)
-        self.log_text.append(msg)
+        # self.handler.process_name = selected_proc
+        # msg = self.handler.connect_application_by_process_name(selected_proc)
+        # self.log_text.append(msg)
         
     def update_status_bar(self, current, total):
         self.progress_bar.setMaximum(total)
@@ -288,6 +290,18 @@ class mainWindow(QtWidgets.QMainWindow):
       
             self.log_text.append(f"파일명 : {template_tuple[0]}, 좌표 : ( {mc_loc[0]} , {mc_loc[1]} )")
     
+    def update_action_Sequence(self):
+        self.action_sequence.clear()
+        self.log_text.clear()
+        for info in self.gui_info:
+            name, (score, mc_loc) = [[k,v] for k,v in info.items()][0]
+            msg = f"Img:{name}, Coord:{mc_loc}, Act:{PatternType.CLICK.name}, Conf:{100-int(score*100)}"
+            item = QtWidgets.QListWidgetItem(msg)
+            item.setData(Qt.UserRole, [PatternType.CLICK, name, mc_loc])
+            self.action_sequence.addItem(item)
+            msg = f"<< Add : [{name}, {PatternType.CLICK.name}]"
+            self.log_text.append(msg)
+            
         
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
