@@ -46,6 +46,31 @@ class UITemplateMatcher(QThread):
         self.lock = threading.Lock()
         self.gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     
+    def match_difference_frames(self, src, des):
+        # 두 프레임을 그레이스케일로 변환
+        gray1 = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY)
+        gray2 = cv2.cvtColor(des, cv2.COLOR_BGR2GRAY)
+
+        # 두 프레임 사이의 차이 계산
+        diff = cv2.absdiff(gray1, gray2)
+
+        # 차이 이미지를 이진화
+        _, thresh = cv2.threshold(diff, 30, 255, cv2.THRESH_BINARY)
+
+        # 변화된 부분을 강조하기 위해 윤곽선 찾기
+        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        is_diff = False
+        # 원본 프레임에 변화된 부분을 강조
+        for contour in contours:
+            if cv2.contourArea(contour) > 600:  # 너무 작은 변화는 무시
+                is_diff = True
+                x, y, w, h = cv2.boundingRect(contour)
+                cv2.rectangle(src, (x, y), (x + w, y + h), (0, 0, 255), 5)
+                break
+
+        return is_diff
+
     def match_templates(self, template, pbar):
         # Dict 처리
         template_tuple = [ (k,v) for k,v in template.items()][0]

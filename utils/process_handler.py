@@ -182,19 +182,19 @@ class WindowProcessHandler():
     
     @os_specific_task("Windows")
     def mouseclick(self, button: str, coords: tuple):
-        # def task():
+        def task():
         # self.window_process.set_focus()
-        self.window_process.activate()
-        mouse.click(button=button, coords=coords)
-        # threading.Thread(target=task).start()
+            self.window_process.activate()
+            mouse.click(button=button, coords=coords)
+        threading.Thread(target=task).start()
     
     @os_specific_task("Windows")
     def sendkey(self, key: str):
-        # def task():
+        def task():
         # self.window_process.set_focus()
-        self.window_process.activate()
-        keyboard.send_keys(key)
-        # threading.Thread(target=task).start()
+            self.window_process.activate()
+            keyboard.send_keys(key)
+        threading.Thread(target=task).start()
     
     @os_specific_task("Windows")
     def captuer_screen_on_application(self):

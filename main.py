@@ -73,6 +73,8 @@ class mainWindow(QtWidgets.QMainWindow):
         
         self.gui_pixmap = QPixmap()
         
+        self.auto_play.clicked.connect(self.play_auto)
+        
         # 프로세스 handler
         # process_name = 'Geometry Dash'
         # self.process_name.setText(process_name)
@@ -100,6 +102,8 @@ class mainWindow(QtWidgets.QMainWindow):
         
         self.is_rematch = False
         
+        
+        
 
     # Event Section
     def resizeEvent(self, event):
@@ -108,6 +112,12 @@ class mainWindow(QtWidgets.QMainWindow):
 
     def closeEvent(self, event):
         event.accept()
+    
+    def play_auto(self):
+        self.confirm_running_process()
+        self.match_gui_templates()
+        # self.start_routine()
+        
     
     # Function Section
     def start_routine(self):
@@ -130,8 +140,16 @@ class mainWindow(QtWidgets.QMainWindow):
             self.showNormal()
     
     def on_finished(self, result_image):
+        
+        if len(self.matcher.matches) == 0:
+            self.match_gui_templates()
+            self.repeater.stop()
+            pass
+        
+        
         self.progress_bar.setFormat(" I got it.! ")
         self.gui_search.setEnabled(True)
+        
         
         # gui 관련 파라미터 업데이트
         self.update_gui_parameters(self.matcher)
@@ -151,6 +169,7 @@ class mainWindow(QtWidgets.QMainWindow):
         # else:
             # self.showNormal()
         
+        self.start_routine()    
 
     def open_browser(self):
         # options = QtWidgets.QFileDialog.Options()
@@ -203,11 +222,11 @@ class mainWindow(QtWidgets.QMainWindow):
         image = self.handler.caputer_monitor_to_cv_img()
 
         # threshhold = 0.9
-        self.matcher = UITemplateMatcher(image,templates, scale_range=(0.7, 1.2), scale_step=0.1)#,threshold=threshhold)
+        self.matcher = UITemplateMatcher(image,templates, scale_range=(0.7, 1.0), scale_step=0.1)#,threshold=threshhold)
         self.matcher.update_progress.connect(self.update_status_bar)  # 시그널 연결
         self.matcher.finished.connect(self.on_finished)  # 작업 완료 시그널 연결
         self.matcher.start()  # QThread 시작
-        
+        self.rematch.emit(self.matcher) 
         # self.repeater.receive_matcher(self.matcher)
 
     
@@ -307,9 +326,9 @@ class mainWindow(QtWidgets.QMainWindow):
         self.progress_bar.setValue(current)
         
         if current % 2 == 0:
-            self.progress_bar.setFormat("....".format(int(current/total*100)))
+            self.progress_bar.setFormat("....")
         else:
-            self.progress_bar.setFormat("...".format(int(current/total*100)))
+            self.progress_bar.setFormat("...")
         
         self.gui_search.setEnabled(False)
 
@@ -394,10 +413,10 @@ class mainWindow(QtWidgets.QMainWindow):
         # 윈도우 화면 전체 캡쳐
         image = self.handler.caputer_monitor_to_cv_img()
         
-        self.matcher = UITemplateMatcher(image,templates, scale_range=(0.7, 1.2), scale_step=0.1)#,threshold=threshhold)
+        self.matcher = UITemplateMatcher(image,templates, scale_range=(0.7, 1.0), scale_step=0.1)#,threshold=threshhold)
         self.matcher.update_progress.connect(self.update_status_bar)  # 시그널 연결
         self.matcher.finished.connect(self.on_finished)  # 작업 완료 시그널 연결
-        # self.matcher.start()  # QThread 시작
+        self.matcher.start()  # QThread 시작
         # QThread 쪽으로 호출
         self.rematch.emit(self.matcher)
         

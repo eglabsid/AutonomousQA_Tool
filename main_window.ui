@@ -263,6 +263,12 @@
                </property>
                <item>
                 <widget class="QLabel" name="pname">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
                  <property name="text">
                   <string>프로세스명 :</string>
                  </property>
@@ -294,6 +300,13 @@
                  </property>
                  <property name="autoRepeat">
                   <bool>false</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="auto_play">
+                 <property name="text">
+                  <string>자동시작</string>
                  </property>
                 </widget>
                </item>
