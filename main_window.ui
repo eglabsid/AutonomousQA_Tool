@@ -286,6 +286,15 @@
                  <property name="text">
                   <string>확인</string>
                  </property>
+                 <property name="checkable">
+                  <bool>false</bool>
+                 </property>
+                 <property name="checked">
+                  <bool>false</bool>
+                 </property>
+                 <property name="autoRepeat">
+                  <bool>false</bool>
+                 </property>
                 </widget>
                </item>
               </layout>

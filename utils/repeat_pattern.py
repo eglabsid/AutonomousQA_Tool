@@ -1,12 +1,15 @@
 
-from PyQt5.QtCore import QThread, Qt, pyqtSignal
+
 import numpy as np
+import re
+
+from PyQt5.QtCore import QThread, Qt, pyqtSignal
 
 from enum import Enum
-class PatternType(Enum):
+class ItemType(Enum):
     CLICK = 0
     TYPING = 1
-    MATCH = 2
+    REMATCH = 2
     DELAY = 3
 
 class StrEnum(str, Enum):
@@ -35,55 +38,97 @@ class SendKey(StrEnum):
 
 class RepeatPattern(QThread):
 
-    message = pyqtSignal(str)
+    state = pyqtSignal(str)
+    # decision = pyqtSignal(str)
     
-    def __init__(self, items, handler):
+    def __init__(self):
         super().__init__()
         self.running = True
-        self.items = items
+        self.items = []
+        self.handler = None
+        # self.matcher = None
+        self.delay = 1.5
+        
+        pattern = r"quit|back"
+        # pattern = re.escape(string) # 특정 문자열을 정규 표현식 패턴으로 변환
+        self.compiled_pattern = re.compile(pattern)
+    
+    def receive_items(self, items):
+        # self.items = sorted(items,key=lambda x:x[1][0],reverse=True)
+        _items = sorted(items,key=lambda x:x[1][0],reverse=True)
+            
+        # 정규표현식을 이용해, 돌아가는 유아이를 맨앞으로 이동         
+        quit_idx = 0
+        # quit_str = ""
+        for idx, item in enumerate(_items):
+            matches = self.compiled_pattern.findall(item[1][0])
+            if len(matches) > 0:
+                # quit_str = matches[0]
+                quit_idx = idx
+                break
+        
+        # 위치  변경
+        # item = _items.pop(quit_idx)
+        # _items.insert(0,item)
+        _items = [_items[quit_idx]] + _items[:quit_idx] + _items[quit_idx+1:] 
+        # print(f"_items: {_items}")
+        self.items.extend(_items)
+        # print(f"self.items: {self.items}")
+        self.running = True
+        
+    def receive_handler(self, handler):
         self.handler = handler
         
-        
-        # self.redirect = pyqtSignal(str) 
-
+    def receive_matcher(self, matcher):
+        print("receive_matcher 실행")
+        matcher.start()
+    
     def run(self): # ctrl+esc 로 종료 메시지
+        # self.running = True
         while self.running:
             
             if len(self.items) < 1:
-                self.running = False
+                print(f"Items is empty")
+                self.state.emit(SendKey.ESC.value)
                 break
                     
             # for item in self.items:
-            item = self.items.pop(0)
-                
+            data = self.items.pop(-1)
             if not self.running:
+                print("is not running")
                 break
             
-            data = item.data(Qt.UserRole)
-            delay = 2.5
             if data:
                 ptype = data[0]
                 dinfo = data[1]
-                if ptype == PatternType.CLICK:
+                if ptype == ItemType.CLICK: # GUI 설정에 주료 활용
+                    ''' 
+                        GUI 설정에 주로 활용
+                        다른 게임 타겟시, 활용방법 고민예정
+                    '''
+                    img = dinfo[0]
+                    coord = dinfo[1]
+                    print(f"{ptype}, {img}")
+                    self.msleep(int(500*self.delay))
+                    self.handler.mouseclick('left',coord)
+                    self.msleep(int(700*self.delay))
+                    self.handler.sendkey(SendKey.ESC.value)
+                elif ptype == ItemType.TYPING:
+                    # self.handler.sendkey(SendKey.ESC.value)
+                    pass
+                elif ptype == ItemType.REMATCH:
                     img = dinfo[0]
                     coord = dinfo[1]
                     self.handler.mouseclick('left',coord)
-                    self.message.emit(img)
-                elif ptype == PatternType.TYPING:
-                    # pyautogui.press(b)   # 키 입력
-                    # inputManager.release_key(b)
-                    pass
-                elif ptype == PatternType.MATCH:
-                    
-                    
-                    # image_path = os.path.abspath(b[0])
-                    image_path = dinfo[0]
-                    print(f"이미지 절대 경로: {image_path}")
-                elif ptype == PatternType.DELAY:
-                    delay = int(dinfo)
-                print(f"실행 {data}")
-                
-            self.msleep(int(1000*delay))
+                    print(f"{ptype}, {img}")
+                    self.state.emit(img)
+                    break
+                elif ptype == ItemType.DELAY:
+                    self.delay = int(dinfo[0])
+            # print(f"Items : {len(self.items)}")        
+        # print(f"Stop run. Items : {len(self.items)}")
 
     def stop(self):
         self.running = False
+        print(f"Stop repeat")
+        self.wait()

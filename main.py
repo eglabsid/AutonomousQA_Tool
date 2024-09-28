@@ -8,19 +8,20 @@ from src.image_dialog import ImageDialog
 from src.interval_dialog import IntervalDialog
 
 from utils.process_handler import WindowProcessHandler
-from utils.repeat_pattern import RepeatPattern, PatternType
+from utils.repeat_pattern import RepeatPattern, ItemType, SendKey
 from utils.template_matcher import UITemplateMatcher, TemplateMatcher, get_all_images, get_subfolders
 
 # opencv
 import cv2
 
-import numpy as np
-import mss
-import mss.tools
+import re
 
 window_ui = 'main_window.ui'
 
 class mainWindow(QtWidgets.QMainWindow):
+    
+    rematch = pyqtSignal(UITemplateMatcher)
+
     def __init__(self):
         super(mainWindow, self).__init__()
         self.initUI()
@@ -31,7 +32,7 @@ class mainWindow(QtWidgets.QMainWindow):
         self.centralWidget.setLayout(self.main_layout)
         
         self.progress_bar = QtWidgets.QProgressBar()
-        self.progress_label = QtWidgets.QLabel("Detecting GUI Images :")
+        self.progress_label = QtWidgets.QLabel("Recognizes the GUI")
         self.statusbar.addWidget(self.progress_label)
         self.statusbar.addWidget(self.progress_bar)
         self.setStatusBar(self.statusbar)
@@ -62,12 +63,12 @@ class mainWindow(QtWidgets.QMainWindow):
         self.confirm_process.clicked.connect(self.confirm_running_process)
         self.gui_search.clicked.connect(self.match_gui_templates) 
         
-        folder_dir = 'screen/UI'
-        self.gui_folder.setText(folder_dir)
-        self.gui_img_files = get_all_images(folder_dir)
-        self.gui_sub_folders = get_subfolders(folder_dir)
+        self.gui_resource_path = f"{os.getcwd()}/screen/UI"
+        self.gui_folder.setText(self.gui_resource_path)
+        self.gui_img_files = get_all_images(self.gui_resource_path)
+        self.gui_sub_folders = get_subfolders(self.gui_resource_path)
         self.gui_info = []
-        self.gui_resource_path = ""
+        
         self.gui_browser.clicked.connect(self.open_browser) 
         
         self.gui_pixmap = QPixmap()
@@ -87,13 +88,18 @@ class mainWindow(QtWidgets.QMainWindow):
         self.process_list.currentIndexChanged.connect(self.update_process_list)                
         self.handler.process_name = self.process_list.currentText()
         
-        
-        
         self.preset_combo.addItems([f"프리셋 {i}" for i in range(0, 10)])  # 예시 프리셋 추가
         self.preset_combo.currentIndexChanged.connect(self.update_preset)                
         self.log_text.setReadOnly(True)
 
-        self.repeater = None
+        self.repeater = RepeatPattern()
+        self.repeater.receive_handler(self.handler)
+        self.repeater.state.connect(self.update_decision)
+        
+        self.rematch.connect(self.repeater.receive_matcher)
+        
+        self.is_rematch = False
+        
 
     # Event Section
     def resizeEvent(self, event):
@@ -106,8 +112,9 @@ class mainWindow(QtWidgets.QMainWindow):
     # Function Section
     def start_routine(self):
         if self.repeater is None or not self.repeater.isRunning():
-            actions = [self.action_sequence.item(i) for i in range(self.action_sequence.count())]
-            self.repeater = RepeatPattern(actions, self.handler)
+            # actions = [self.action_sequence.item(i) for i in range(self.action_sequence.count())]
+            items = [item.data(Qt.UserRole) for item in self.action_sequence.findItems("", Qt.MatchContains)]
+            self.repeater.receive_items(items)
             self.log_text.append("루틴이 시작되었습니다.")
             self.repeater.start()
             
@@ -123,63 +130,85 @@ class mainWindow(QtWidgets.QMainWindow):
             self.showNormal()
     
     def on_finished(self, result_image):
-        self.progress_bar.setFormat(" Complete ")
+        self.progress_bar.setFormat(" I got it.! ")
         self.gui_search.setEnabled(True)
         
         # gui 관련 파라미터 업데이트
-        self.update_gui_parameters()
+        self.update_gui_parameters(self.matcher)
         
         self.gui_pixmap = self.view_resized_img_on_widget(result_image,self.gui_result.width(),self.gui_result.height())
         self.gui_result.setPixmap(self.gui_pixmap)
-        self.showNormal()
         
-        self.update_action_Sequence()
+        # template matching 결과 Item 업데이트
+        self.update_action_sequence(self.gui_info,self.gui_sub_folders)
+        
+        if self.is_rematch:
+            self.is_rematch = False
+            
+            items = [item.data(Qt.UserRole) for item in self.action_sequence.findItems("", Qt.MatchContains)]
+            self.repeater.receive_items(items)
+            self.repeater.start()
+        # else:
+            # self.showNormal()
+        
 
     def open_browser(self):
         # options = QtWidgets.QFileDialog.Options()
         # options |= QtWidgets.QFileDialog.ReadOnly  # 파일을 읽기 전용으로 열기
         # file_filter = "Images (*.png *.jpg *.jpeg *.bmp)"  # 이미지 파일 필터 설정
         # folder_dir, _ = QtWidgets.QFileDialog.getOpenFileName(self, "이미지 파일 선택", "", file_filter, options=options)
-        folder_dir = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select Directory')
-        if folder_dir:
-            self.gui_folder.setText(folder_dir)
-            self.gui_img_files = get_all_images(folder_dir)
-            self.gui_sub_folders = get_subfolders(folder_dir)
+        self.gui_resource_path = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select Directory')
+        if self.gui_resource_path:
+            self.gui_folder.setText(self.gui_resource_path)
+            self.gui_img_files = get_all_images(self.gui_resource_path)
+            self.gui_sub_folders = get_subfolders(self.gui_resource_path)
 
-
+    def make_gui_template(self,img_files):
+         # 사용 예제
+        templates = []
+        for file in img_files:
+            # name = file.split('/')[-1]
+            name = file.split('.')[0]
+            template = {}
+            template[name] = cv2.imread(file,0)
+            templates.append(template)
+        return templates
+            
     def match_gui_templates(self):
-        # process 접근
-        # msg = self.handler.connect_application_by_handler()
-        msg = self.handler.connect_application_by_process_name(self.process_list.currentText())
-        self.log_text.append(msg)
+        
+        # self.gui_resource_path = self.gui_folder.text()
+        
+        if self.handler.window_process == None:
+            # process 접근
+            # msg = self.handler.connect_application_by_handler()
+            msg = self.handler.connect_application_by_process_name(self.process_list.currentText())
+            self.log_text.append(msg)
+        else:
+            self.handler.window_process.activate()
+            
         # folder_dir = 'screen/UI'
         if len(self.gui_img_files) < 1:
             self.progress_bar.setFormat(f"경로 :'{self.gui_folder.text()}' 내에 이미지 파일이 없습니다.")
             return
         
-        # 윈도우 창 최소화            
-        # self.showMinimized()
-        QThread.msleep(int(200))
-        # 사용 예제
-        templates = []
-        for file in self.gui_img_files:
-            name = file.split('/')[-1]
-            name = name.split('.')[0]
-            template = {}
-            template[name] = cv2.imread(file,0)
-            templates.append(template)
         
-        with mss.mss() as sct:
-            monitor = sct.monitors[1]
-            screenshot = sct.grab(monitor) # screenshot 
-            image = np.array(screenshot)
-            image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
+        # 윈도우 창 최소화 
+        # self.showMinimized()
+        QThread.msleep(int(100))
+        
+        # 사용 예제
+        templates = self.make_gui_template(self.gui_img_files)
+        
+        # 윈도우 화면 전체 캡쳐
+        image = self.handler.caputer_monitor_to_cv_img()
 
-            # threshhold = 0.9
-            self.matcher = UITemplateMatcher(image,templates, scale_range=(0.7, 1.2), scale_step=0.1)#,threshold=threshhold)
-            self.matcher.update_progress.connect(self.update_status_bar)  # 시그널 연결
-            self.matcher.finished.connect(self.on_finished)  # 작업 완료 시그널 연결
-            self.matcher.start()  # QThread 시작
+        # threshhold = 0.9
+        self.matcher = UITemplateMatcher(image,templates, scale_range=(0.7, 1.2), scale_step=0.1)#,threshold=threshhold)
+        self.matcher.update_progress.connect(self.update_status_bar)  # 시그널 연결
+        self.matcher.finished.connect(self.on_finished)  # 작업 완료 시그널 연결
+        self.matcher.start()  # QThread 시작
+        
+        # self.repeater.receive_matcher(self.matcher)
 
     
     def view_resized_img_on_widget(self,frame, width, height):
@@ -195,10 +224,17 @@ class mainWindow(QtWidgets.QMainWindow):
         return QPixmap.fromImage(resized_img)
     
     def confirm_running_process(self): ##
-        cur_proc = self.process_list.currentText()
-        # msg = self.handler.connect_application_by_handler()
-        msg = self.handler.connect_application_by_process_name(cur_proc)
-        self.log_text.append(msg)
+        # List-up Running Process
+        proc_lst = self.handler.get_running_process_list()
+        for proc in proc_lst:
+            self.process_list.addItem(f"{proc['name']}")
+        
+        msg = f"실행중인 프로세스를 다시 확인합니다."
+        self.log_text.append(msg)    
+        # cur_proc = self.process_list.currentText()
+        # # msg = self.handler.connect_application_by_handler()
+        # msg = self.handler.connect_application_by_process_name(cur_proc)
+        # self.log_text.append(msg)
             
     def set_delay(self):
         dialog = IntervalDialog(self)
@@ -206,7 +242,7 @@ class mainWindow(QtWidgets.QMainWindow):
 
         if result == QtWidgets.QDialog.Accepted:
             item = QtWidgets.QListWidgetItem(f"{dialog.interval_line.text()} 초 대기")
-            item.setData(Qt.UserRole, [PatternType.DELAY, [dialog.interval_line.text()]])
+            item.setData(Qt.UserRole, [ItemType.DELAY, [dialog.interval_line.text()]])
 
             self.log_text.append(f"대기Action 추가 : {item.data(Qt.UserRole)}")
             self.action_sequence.addItem(item)
@@ -226,11 +262,11 @@ class mainWindow(QtWidgets.QMainWindow):
         if result == QtWidgets.QDialog.Accepted:
             if dialog.input_toggle == 0:
                 item = QtWidgets.QListWidgetItem(f"좌표 클릭 ({dialog.mousePos[0]}, {dialog.mousePos[1]})")
-                item.setData(Qt.UserRole, [PatternType.CLICK, dialog.mousePos])
+                item.setData(Qt.UserRole, [ItemType.CLICK, dialog.mousePos])
                 self.log_text.append(f"클릭Action 추가 : ({item.data(Qt.UserRole)})")
             elif dialog.input_toggle == 1:
                 item = QtWidgets.QListWidgetItem(f"키 입력 ({dialog.input_key.text()})")
-                item.setData(Qt.UserRole, [PatternType.TYPING, [dialog.input_key.text()]])
+                item.setData(Qt.UserRole, [ItemType.TYPING, [dialog.input_key.text()]])
                 self.log_text.append(f"키Action 추가 : ({item.data(Qt.UserRole)})")
             self.action_sequence.addItem(item)
         
@@ -241,7 +277,7 @@ class mainWindow(QtWidgets.QMainWindow):
 
         if result == QtWidgets.QDialog.Accepted:
             item = QtWidgets.QListWidgetItem(f"이미지 클릭 {os.path.basename(dialog._imgPath)}")
-            item.setData(Qt.UserRole, [PatternType.MATCH, [dialog._imgPath, dialog.confidence.value()]])
+            item.setData(Qt.UserRole, [ItemType.REMATCH, [dialog._imgPath, dialog.confidence.value()]])
 
             self.log_text.append(f"이미지클릭Action 추가{os.path.basename(dialog._imgPath)}, 유사도:{dialog.confidence.value()}")
             self.action_sequence.addItem(item)
@@ -269,19 +305,21 @@ class mainWindow(QtWidgets.QMainWindow):
     def update_status_bar(self, current, total):
         self.progress_bar.setMaximum(total)
         self.progress_bar.setValue(current)
-        self.progress_bar.setFormat("{0}%".format(int(current/total*100)))
+        
+        if current % 2 == 0:
+            self.progress_bar.setFormat("....".format(int(current/total*100)))
+        else:
+            self.progress_bar.setFormat("...".format(int(current/total*100)))
+        
         self.gui_search.setEnabled(False)
 
-    def update_gui_parameters(self):
+    def update_gui_parameters(self,matcher):
         # gui 관련 파라미터 초기화
-        self.gui_resource_path = ""
         self.gui_info.clear()
         self.log_text.clear()
         
         # gui 관련 파라미터 설정
-        for loc, scale, score, template_tuple in self.matcher.matches:
-            if self.gui_resource_path == "":
-                self.gui_resource_path = template_tuple[0].split('\\')[0]
+        for loc, scale, score, template_tuple in matcher.matches:    
             path = template_tuple[0].split('\\')[-1]
             name = path.split('.')[0]
             h,w = template_tuple[1].shape # 중심좌표
@@ -290,20 +328,80 @@ class mainWindow(QtWidgets.QMainWindow):
             gui_dic[name] = ( score , mc_loc )
             self.gui_info.append(gui_dic)
       
-            self.log_text.append(f"파일명 : {template_tuple[0]}, 좌표 : ( {mc_loc[0]} , {mc_loc[1]} )")
+            msg = f"파일명 : {template_tuple[0]}, 좌표 : ( {mc_loc[0]} , {mc_loc[1]} )"
+            # print(msg)
+            self.log_text.append(msg)
     
-    def update_action_Sequence(self):
+    def update_action_sequence(self,gui_info,sub_folders):
         self.action_sequence.clear()
         self.log_text.clear()
-        for info in self.gui_info:
+        for info in gui_info:
             name, (score, mc_loc) = [[k,v] for k,v in info.items()][0]
-            msg = f"Img:{name}, Coord:{mc_loc}, Act:{PatternType.CLICK.name}, Conf:{100-int(score*100)}"
-            item = QtWidgets.QListWidgetItem(msg)
-            item.setData(Qt.UserRole, [PatternType.CLICK, [name, mc_loc]])
-            self.action_sequence.addItem(item)
-            msg = f"<< Add : [{name}, {PatternType.CLICK.name}]"
-            self.log_text.append(msg)
             
+            # 정규 표현식 패턴
+            # 정규 표현식을 사용하여 문자열 검색
+            is_match = False
+            for sub_folder in sub_folders:
+                pattern = re.escape(name) # 특정 문자열을 정규 표현식 패턴으로 변환
+                search = re.search(pattern,sub_folder)
+                if search:
+                    is_match = True
+                    break
+            
+            msg = f"{name}, [{ItemType.CLICK.name}, Coord:{mc_loc}, Conf:{100-int(score*100)}]"
+            if is_match:
+                msg = f"{name}, [{ItemType.REMATCH.name}, Coord:{mc_loc}, Conf:{100-int(score*100)}]"
+            
+            item = QtWidgets.QListWidgetItem(msg)
+            data = [ItemType.CLICK, [name, mc_loc]]
+            if is_match:
+                data = [ItemType.REMATCH, [name, mc_loc]]
+            
+            item.setData(Qt.UserRole, data)
+            self.action_sequence.addItem(item)
+            msg = f"<< Add : [{name}, {ItemType.CLICK.name}]"
+            if is_match:
+                msg = f"<< Add : [{name}, {ItemType.REMATCH.name}]"
+                
+            self.log_text.append(msg)
+    
+    def update_decision(self,state):
+        if state == SendKey.ESC.value:
+            self.showNormal()
+            return
+        # print(state)
+        self.is_rematch = True
+        
+        # # 정규 표현식 패턴
+        # # 정규 표현식을 사용하여 문자열 검색
+        # remove_idx = 0
+        # for i,sub_folder in enumerate(self.gui_sub_folders):
+        #     pattern = re.escape(state) # 특정 문자열을 정규 표현식 패턴으로 변환
+        #     search = re.search(pattern,sub_folder)
+        #     if search:
+        #         remove_idx = i
+        #         break
+        # self.gui_sub_folders.pop(remove_idx)
+        gui_resource_path = f"{self.gui_resource_path}/{state}"
+        self.gui_folder.setText(gui_resource_path)
+        self.gui_img_files = get_all_images(gui_resource_path)
+        self.gui_sub_folders = get_subfolders(gui_resource_path)
+        
+        # 사용 예제
+        templates = self.make_gui_template(self.gui_img_files)
+        self.handler.window_process.activate()
+        QThread.msleep(int(500))
+        # 윈도우 화면 전체 캡쳐
+        image = self.handler.caputer_monitor_to_cv_img()
+        
+        self.matcher = UITemplateMatcher(image,templates, scale_range=(0.7, 1.2), scale_step=0.1)#,threshold=threshhold)
+        self.matcher.update_progress.connect(self.update_status_bar)  # 시그널 연결
+        self.matcher.finished.connect(self.on_finished)  # 작업 완료 시그널 연결
+        # self.matcher.start()  # QThread 시작
+        # QThread 쪽으로 호출
+        self.rematch.emit(self.matcher)
+        
+    
         
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)

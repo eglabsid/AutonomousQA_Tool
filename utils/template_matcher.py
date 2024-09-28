@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QStatusBar
 from PyQt5.QtCore import pyqtSignal, QThread
 
 def get_subfolders(root_folder):
+    subfolders = []
     subfolders = [f.path for f in os.scandir(root_folder) if f.is_dir()]
     return subfolders
 
@@ -44,7 +45,7 @@ class UITemplateMatcher(QThread):
         self.matches = []
         self.lock = threading.Lock()
         self.gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        
+    
     def match_templates(self, template, pbar):
         # Dict 처리
         template_tuple = [ (k,v) for k,v in template.items()][0]
@@ -94,9 +95,10 @@ class UITemplateMatcher(QThread):
 
             for thread in threads:
                 thread.join()
-                    
+
             result_image = self.draw_matches(self.frame)
             self.finished.emit(result_image)
+            
     
     def stop(self):
         # self.running = False
@@ -109,7 +111,7 @@ class UITemplateMatcher(QThread):
             cv2.rectangle(image, top_left, bottom_right, (0, 255, 0), 4)
             # cv2.putText(image, f'{score:.2f}', (top_left[0], top_left[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
             cv2.putText(image, f'{template[0]}', (top_left[0], top_left[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
-            cv2.imwrite(f"test_result/{i}.jpg",image)
+            cv2.imwrite(f"obs_result/{i}.jpg",image)
         return image
         
 class TemplateMatcher:
