@@ -50,13 +50,20 @@ class RepeatPattern(QThread):
         self.delay = 1.5
         
         pattern = r"quit|back"
-        # pattern = re.escape(string) # 특정 문자열을 정규 표현식 패턴으로 변환
+        none_esc_patter = r"arrow|quit|back|keymaster"
         self.compiled_pattern = re.compile(pattern)
+        # pattern = re.escape(string) # 특정 문자열을 정규 표현식 패턴으로 변환
+        self.compiled_esc_pattern = re.compile(none_esc_patter)
     
     def receive_items(self, items):
-        # self.items = sorted(items,key=lambda x:x[1][0],reverse=True)
+        
+        # _items = sorted(items,key=lambda x:x[1][0],reverse=True)
+        if len(items) == 0:
+            print(f"Items 사이즈가 0 이라, 루틴을 종료합니다.")
+            self.running = False
+            return
         _items = sorted(items,key=lambda x:x[1][0],reverse=True)
-            
+        
         # 정규표현식을 이용해, 돌아가는 유아이를 맨앞으로 이동         
         quit_idx = 0
         # quit_str = ""
@@ -81,7 +88,17 @@ class RepeatPattern(QThread):
         
     def receive_matcher(self, matcher):
         print("receive_matcher 실행")
-        matcher.start()
+        self.matcher = matcher
+    
+    def check_usable_esc(self,pre_frame, post_frame):
+        if not self.matcher.match_difference_frames(pre_frame,post_frame):
+            print("return - check_usable_esc")
+            return
+        
+        print("check_usable_esc")
+        self.handler.sendkey(SendKey.ESC.value)
+    
+    
     
     def run(self): # ctrl+esc 로 종료 메시지
         # self.running = True
@@ -109,10 +126,15 @@ class RepeatPattern(QThread):
                     img = dinfo[0]
                     coord = dinfo[1]
                     print(f"{ptype}, {img}")
-                    self.msleep(int(500*self.delay))
+                    # self.msleep(int(500*self.delay))
+                    pre_frame = self.handler.caputer_monitor_to_cv_img()
                     self.handler.mouseclick('left',coord)
-                    self.msleep(int(700*self.delay))
-                    self.handler.sendkey(SendKey.ESC.value)
+                    self.msleep(int(700))
+                    post_frame = self.handler.caputer_monitor_to_cv_img()
+                    search = self.compiled_esc_pattern.search(img)
+                    if not search:
+                        self.check_usable_esc(pre_frame,post_frame)
+                    self.msleep(int(400))
                 elif ptype == ItemType.TYPING:
                     # self.handler.sendkey(SendKey.ESC.value)
                     pass
