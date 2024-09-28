@@ -17,6 +17,10 @@ import psutil
 from memory_profiler import profile
 import pygetwindow as gw
 
+import numpy as np
+import mss
+import mss.tools
+
 import warnings
 warnings.filterwarnings("ignore", message="Apply externally defined coinit_flags: 2")
 
@@ -66,7 +70,15 @@ class WindowProcessHandler():
         self.process_name = None
         self.hwnd = None
         self.window_process = None
-
+    
+    def caputer_monitor_to_cv_img(self):
+        with mss.mss() as sct:
+            monitor = sct.monitors[1]
+            screenshot = sct.grab(monitor) # screenshot 
+            image = np.array(screenshot)
+            image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
+        return image
+    
     # 모든 프로세스 목록 가져오기
     def get_running_process_list(self):
         process_list = []
@@ -170,19 +182,19 @@ class WindowProcessHandler():
     
     @os_specific_task("Windows")
     def mouseclick(self, button: str, coords: tuple):
-        def task():
-            # self.window_process.set_focus()
-            self.window_process.activate()
-            mouse.click(button=button, coords=coords)
-        threading.Thread(target=task).start()
+        # def task():
+        # self.window_process.set_focus()
+        self.window_process.activate()
+        mouse.click(button=button, coords=coords)
+        # threading.Thread(target=task).start()
     
     @os_specific_task("Windows")
     def sendkey(self, key: str):
-        def task():
-            # self.window_process.set_focus()
-            self.window_process.activate()
-            keyboard.send_keys(key)
-        threading.Thread(target=task).start()
+        # def task():
+        # self.window_process.set_focus()
+        self.window_process.activate()
+        keyboard.send_keys(key)
+        # threading.Thread(target=task).start()
     
     @os_specific_task("Windows")
     def captuer_screen_on_application(self):
