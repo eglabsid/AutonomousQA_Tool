@@ -63,11 +63,12 @@ class mainWindow(QtWidgets.QMainWindow):
         self.confirm_process.clicked.connect(self.confirm_running_process)
         self.gui_search.clicked.connect(self.match_gui_templates) 
         
-        self.gui_resource_path = f"{os.getcwd()}/screen/UI"
-        self.gui_folder.setText(self.gui_resource_path)
-        self.gui_img_files = get_all_images(self.gui_resource_path)
-        self.gui_sub_folders = get_subfolders(self.gui_resource_path)
-        self.gui_info = []
+        self.gui_resource_root_dir = f"{os.getcwd()}/screen/UI" # 단일 path
+        self.gui_resource_root_dir = self.gui_resource_root_dir.replace("\\","/")
+        
+        self.gui_img_files, self.gui_subfolders=self.update_files_in_directory(self.gui_resource_root_dir)
+        self.gui_matched_subfolders = []
+        self.gui_matchinfo = []
         
         self.gui_browser.clicked.connect(self.open_browser) 
         
@@ -96,14 +97,13 @@ class mainWindow(QtWidgets.QMainWindow):
 
         self.repeater = RepeatPattern()
         self.repeater.receive_handler(self.handler)
-        self.repeater.state.connect(self.update_decision)
+        self.repeater.subfolder.connect(self.update_decision)
+        self.repeater.finished.connect(self.clear)
         
         self.rematch.connect(self.repeater.receive_matcher)
         
         self.is_rematch = False
-        
-        
-        
+        self.is_auto = False
 
     # Event Section
     def resizeEvent(self, event):
@@ -113,10 +113,17 @@ class mainWindow(QtWidgets.QMainWindow):
     def closeEvent(self, event):
         event.accept()
     
+    def clear(self,finished):
+        self.action_sequence.clear()
+        self.log_text.clear()
+        self.log_text.setText(finished)
+        self.is_auto = False
+        self.showNormal()
+    
     def play_auto(self):
         self.confirm_running_process()
         self.match_gui_templates()
-        # self.start_routine()
+        self.is_auto = True
         
     
     # Function Section
@@ -136,16 +143,84 @@ class mainWindow(QtWidgets.QMainWindow):
             self.repeater.stop()
             self.log_text.append("루틴이 정지되었습니다.")
             self.repeater.wait()
-            
             self.showNormal()
-    
+
+
+    def open_browser(self):
+        self.gui_resource_root_dir = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select Directory')
+        if self.gui_resource_root_dir:
+            self.gui_img_files, self.gui_subfolders = self.update_files_in_directory(self.gui_resource_root_dir)
+
+    def make_gui_template(self,img_files):
+         # 사용 예제
+        templates = []
+        for file in img_files:
+            # name = file.split('/')[-1]
+            name = file.split('.')[0]
+            print(name)
+            template = {}
+            template[name] = cv2.imread(file,0)
+            templates.append(template)
+        return templates
+            
+    def match_gui_templates(self):
+        # process 접근
+        if self.handler.window_process == None:
+            # msg = self.handler.connect_application_by_handler() #pywinauto 이용방법
+            msg = self.handler.connect_application_by_process_name(self.process_list.currentText())
+            self.log_text.append(msg)
+        else:
+            self.handler.window_process.activate()
+            
+        # folder_dir = 'screen/UI'
+        if len(self.gui_img_files) < 1:
+            self.progress_bar.setFormat(f"경로 :'{self.gui_folder.text()}' 내에 이미지 파일이 없습니다.")
+            return
+        
+        # 윈도우 화면 전체 캡쳐
+        QThread.msleep(int(300))
+        image = self.handler.caputer_monitor_to_cv_img()
+        
+        # GUI 폴더 경로상의 이미지 
+        templates = self.make_gui_template(self.gui_img_files)
+
+        # threshhold = 0.9
+        self.matcher = UITemplateMatcher(image,templates, scale_range=(0.7, 1.0), scale_step=0.1)#,threshold=threshhold)
+        self.matcher.update_progress.connect(self.update_status_bar)  # 시그널 연결
+        self.matcher.finished.connect(self.on_finished)  # 작업 완료 시그널 연결
+        self.matcher.start()  # QThread 시작
+        self.rematch.emit(self.matcher) 
+
     def on_finished(self, result_image):
         
+        # GUI 상의 이미지 검출이 되지 않았을 때, 재시도구간
         if len(self.matcher.matches) == 0:
-            self.match_gui_templates()
-            self.repeater.stop()
-            pass
+            
+            # 1회 재시도 - 스크린 미 캡쳐되었을경우 
+            if self.matcher.iter < 1:
+                self.match_gui_templates()
+                self.matcher.iter += 1
+                self.repeater.stop()
+                pass
+            
+            # 모든 폴더에 대해 재 시도
+            if len(self.gui_subfolders)>0:
+                subfodler = self.gui_subfolders.pop()
+                search = self.gui_resource_root_dir+f"/{subfodler}"
+                # GUI 폴더 경로상의 이미지 
+                self.gui_img_files = get_all_images(search)
+                self.match_gui_templates()
+                # self.repeater.stop()  
+                pass
+                
+            # 루트 한번
+            if self.matcher.iter == 1:
+                self.gui_img_files = get_all_images(self.gui_resource_root_dir)
+                self.match_gui_templates()
+                self.matcher.iter += 1
+                pass
         
+        self.matcher.iter = 0
         
         self.progress_bar.setFormat(" I got it.! ")
         self.gui_search.setEnabled(True)
@@ -158,7 +233,7 @@ class mainWindow(QtWidgets.QMainWindow):
         self.gui_result.setPixmap(self.gui_pixmap)
         
         # template matching 결과 Item 업데이트
-        self.update_action_sequence(self.gui_info,self.gui_sub_folders)
+        self.update_action_sequence(self.gui_matchinfo,self.gui_subfolders)
         
         if self.is_rematch:
             self.is_rematch = False
@@ -166,69 +241,9 @@ class mainWindow(QtWidgets.QMainWindow):
             items = [item.data(Qt.UserRole) for item in self.action_sequence.findItems("", Qt.MatchContains)]
             self.repeater.receive_items(items)
             self.repeater.start()
-        # else:
-            # self.showNormal()
         
-        self.start_routine()    
-
-    def open_browser(self):
-        # options = QtWidgets.QFileDialog.Options()
-        # options |= QtWidgets.QFileDialog.ReadOnly  # 파일을 읽기 전용으로 열기
-        # file_filter = "Images (*.png *.jpg *.jpeg *.bmp)"  # 이미지 파일 필터 설정
-        # folder_dir, _ = QtWidgets.QFileDialog.getOpenFileName(self, "이미지 파일 선택", "", file_filter, options=options)
-        self.gui_resource_path = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select Directory')
-        if self.gui_resource_path:
-            self.gui_folder.setText(self.gui_resource_path)
-            self.gui_img_files = get_all_images(self.gui_resource_path)
-            self.gui_sub_folders = get_subfolders(self.gui_resource_path)
-
-    def make_gui_template(self,img_files):
-         # 사용 예제
-        templates = []
-        for file in img_files:
-            # name = file.split('/')[-1]
-            name = file.split('.')[0]
-            template = {}
-            template[name] = cv2.imread(file,0)
-            templates.append(template)
-        return templates
-            
-    def match_gui_templates(self):
-        
-        # self.gui_resource_path = self.gui_folder.text()
-        
-        if self.handler.window_process == None:
-            # process 접근
-            # msg = self.handler.connect_application_by_handler()
-            msg = self.handler.connect_application_by_process_name(self.process_list.currentText())
-            self.log_text.append(msg)
-        else:
-            self.handler.window_process.activate()
-            
-        # folder_dir = 'screen/UI'
-        if len(self.gui_img_files) < 1:
-            self.progress_bar.setFormat(f"경로 :'{self.gui_folder.text()}' 내에 이미지 파일이 없습니다.")
-            return
-        
-        
-        # 윈도우 창 최소화 
-        # self.showMinimized()
-        QThread.msleep(int(100))
-        
-        # 사용 예제
-        templates = self.make_gui_template(self.gui_img_files)
-        
-        # 윈도우 화면 전체 캡쳐
-        image = self.handler.caputer_monitor_to_cv_img()
-
-        # threshhold = 0.9
-        self.matcher = UITemplateMatcher(image,templates, scale_range=(0.7, 1.0), scale_step=0.1)#,threshold=threshhold)
-        self.matcher.update_progress.connect(self.update_status_bar)  # 시그널 연결
-        self.matcher.finished.connect(self.on_finished)  # 작업 완료 시그널 연결
-        self.matcher.start()  # QThread 시작
-        self.rematch.emit(self.matcher) 
-        # self.repeater.receive_matcher(self.matcher)
-
+        if self.is_auto:
+            self.start_routine()    
     
     def view_resized_img_on_widget(self,frame, width, height):
         # Show on PyQt5 layout
@@ -272,6 +287,8 @@ class mainWindow(QtWidgets.QMainWindow):
             selectedItem = self.action_sequence.item(selectedRow)
             self.log_text.append(f"제거 : {selectedItem.text()}")
             self.action_sequence.takeItem(selectedRow)
+    
+    
     
     def add_actions(self):
         dialog = ActionDialog(self)  # ActionDialog 생성
@@ -334,7 +351,7 @@ class mainWindow(QtWidgets.QMainWindow):
 
     def update_gui_parameters(self,matcher):
         # gui 관련 파라미터 초기화
-        self.gui_info.clear()
+        self.gui_matchinfo.clear()
         self.log_text.clear()
         
         # gui 관련 파라미터 설정
@@ -345,16 +362,16 @@ class mainWindow(QtWidgets.QMainWindow):
             gui_dic = {} # gui 유사도, 좌표, ui name 탐색
             mc_loc = [loc[0] + int(w * scale * 0.5), loc[1] + int(h * scale * 0.5)]
             gui_dic[name] = ( score , mc_loc )
-            self.gui_info.append(gui_dic)
+            self.gui_matchinfo.append(gui_dic)
       
             msg = f"파일명 : {template_tuple[0]}, 좌표 : ( {mc_loc[0]} , {mc_loc[1]} )"
             # print(msg)
             self.log_text.append(msg)
     
-    def update_action_sequence(self,gui_info,sub_folders):
+    def update_action_sequence(self,match_info,sub_folders):
         self.action_sequence.clear()
         self.log_text.clear()
-        for info in gui_info:
+        for info in match_info:
             name, (score, mc_loc) = [[k,v] for k,v in info.items()][0]
             
             # 정규 표현식 패턴
@@ -384,27 +401,33 @@ class mainWindow(QtWidgets.QMainWindow):
                 
             self.log_text.append(msg)
     
-    def update_decision(self,state):
-        if state == SendKey.ESC.value:
-            self.showNormal()
-            return
-        # print(state)
+    def update_files_in_directory(self,root_path, search_path = ""):
+        
+        img_files_in_dir = get_all_images(root_path)
+        subfolders = get_subfolders(root_path) # update subfolder list
+        if len(subfolders) > 0:
+            if search_path != "":
+                root_path = root_path.replace(f"/{search_path}","")
+            subfolders = [folder.replace(f"{root_path}","") for folder in subfolders]
+            
+        self.gui_folder.setText(root_path)
+        return img_files_in_dir, subfolders
+
+    def update_subfolders(self,subfolder):
+        search = f"\\{subfolder}"
+        if search in self.gui_subfolders:
+            self.gui_subfolders.remove(search)
+            self.gui_matched_subfolders.append(search)
+            
+        gui_resource_search_path = f"{self.gui_resource_root_dir}/{subfolder}"
+        self.gui_img_files, subfolders = self.update_files_in_directory(gui_resource_search_path,subfolder)
+        self.gui_subfolders.extend(subfolders)
+        
+    def update_decision(self,subfolder):
+        
         self.is_rematch = True
         
-        # # 정규 표현식 패턴
-        # # 정규 표현식을 사용하여 문자열 검색
-        # remove_idx = 0
-        # for i,sub_folder in enumerate(self.gui_sub_folders):
-        #     pattern = re.escape(state) # 특정 문자열을 정규 표현식 패턴으로 변환
-        #     search = re.search(pattern,sub_folder)
-        #     if search:
-        #         remove_idx = i
-        #         break
-        # self.gui_sub_folders.pop(remove_idx)
-        gui_resource_path = f"{self.gui_resource_path}/{state}"
-        self.gui_folder.setText(gui_resource_path)
-        self.gui_img_files = get_all_images(gui_resource_path)
-        self.gui_sub_folders = get_subfolders(gui_resource_path)
+        self.update_subfolders(subfolder)
         
         # 사용 예제
         templates = self.make_gui_template(self.gui_img_files)

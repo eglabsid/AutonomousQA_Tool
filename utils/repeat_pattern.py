@@ -38,8 +38,8 @@ class SendKey(StrEnum):
 
 class RepeatPattern(QThread):
 
-    state = pyqtSignal(str)
-    # decision = pyqtSignal(str)
+    subfolder = pyqtSignal(str)
+    finished = pyqtSignal(str)
     
     def __init__(self):
         super().__init__()
@@ -47,10 +47,10 @@ class RepeatPattern(QThread):
         self.items = []
         self.handler = None
         # self.matcher = None
-        self.delay = 1.5
+        self.delay = 0.8
         
         pattern = r"quit|back"
-        none_esc_patter = r"arrow|quit|back|keymaster"
+        none_esc_patter = r"arrow|back"
         self.compiled_pattern = re.compile(pattern)
         # pattern = re.escape(string) # 특정 문자열을 정규 표현식 패턴으로 변환
         self.compiled_esc_pattern = re.compile(none_esc_patter)
@@ -62,6 +62,7 @@ class RepeatPattern(QThread):
             print(f"Items 사이즈가 0 이라, 루틴을 종료합니다.")
             self.running = False
             return
+        
         _items = sorted(items,key=lambda x:x[1][0],reverse=True)
         
         # 정규표현식을 이용해, 돌아가는 유아이를 맨앞으로 이동         
@@ -87,15 +88,15 @@ class RepeatPattern(QThread):
         self.handler = handler
         
     def receive_matcher(self, matcher):
-        print("receive_matcher 실행")
+        # print("receive_matcher 실행")
         self.matcher = matcher
     
     def check_usable_esc(self,pre_frame, post_frame):
         if not self.matcher.match_difference_frames(pre_frame,post_frame):
-            print("return - check_usable_esc")
+            print(f"{SendKey.ESC.name} isn't work")
             return
         
-        print("check_usable_esc")
+        print(f"{SendKey.ESC.name}")
         self.handler.sendkey(SendKey.ESC.value)
     
     
@@ -106,7 +107,7 @@ class RepeatPattern(QThread):
             
             if len(self.items) < 1:
                 print(f"Items is empty")
-                self.state.emit(SendKey.ESC.value)
+                self.finished.emit("모든 동작을 실행했습니다.")
                 break
                     
             # for item in self.items:
@@ -129,12 +130,12 @@ class RepeatPattern(QThread):
                     # self.msleep(int(500*self.delay))
                     pre_frame = self.handler.caputer_monitor_to_cv_img()
                     self.handler.mouseclick('left',coord)
-                    self.msleep(int(700))
+                    self.msleep(int(1500*self.delay))
                     post_frame = self.handler.caputer_monitor_to_cv_img()
                     search = self.compiled_esc_pattern.search(img)
                     if not search:
                         self.check_usable_esc(pre_frame,post_frame)
-                    self.msleep(int(400))
+                    self.msleep(int(800*self.delay))
                 elif ptype == ItemType.TYPING:
                     # self.handler.sendkey(SendKey.ESC.value)
                     pass
@@ -143,7 +144,7 @@ class RepeatPattern(QThread):
                     coord = dinfo[1]
                     self.handler.mouseclick('left',coord)
                     print(f"{ptype}, {img}")
-                    self.state.emit(img)
+                    self.subfolder.emit(img)
                     break
                 elif ptype == ItemType.DELAY:
                     self.delay = int(dinfo[0])

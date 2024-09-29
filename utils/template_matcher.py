@@ -45,6 +45,8 @@ class UITemplateMatcher(QThread):
         self.matches = []
         self.lock = threading.Lock()
         self.gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        
+        self.iter = 0
     
     def match_difference_frames(self, src, des):
         # 두 프레임을 그레이스케일로 변환
@@ -71,50 +73,57 @@ class UITemplateMatcher(QThread):
 
         return is_diff
 
-    def match_templates(self, template, pbar):
-        # Dict 처리
-        template_tuple = [ (k,v) for k,v in template.items()][0]
-        # name = template_tuple[0]
-        img = template_tuple[1]
-        
-        best_match = None
-        best_val = -1
-        best_scale = 1.0
-        best_loc = (-1, -1)
-        is_match = False
-        for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_step):
-            resized_template = cv2.resize(img, (0, 0), fx=scale, fy=scale)
-            result = cv2.matchTemplate(self.gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
-            # locations = np.where(result >= self.threshold)
-            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+    def match_templates(self,semaphore, template, pbar):
+        with semaphore:
+            # Dict 처리
+            template_tuple = [ (k,v) for k,v in template.items()][0]
+            # name = template_tuple[0]
+            img = template_tuple[1]
+            
+            best_match = None
+            best_val = -1
+            best_scale = 1.0
+            best_loc = (-1, -1)
+            is_match = False
+            for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_step):
+                resized_template = cv2.resize(img, (0, 0), fx=scale, fy=scale)
+                result = cv2.matchTemplate(self.gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
+                # locations = np.where(result >= self.threshold)
+                min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
 
-            pbar.update(1)  # 스레드 완료 시 진행 상황 업데이트
-            self.current_task += 1
-            self.update_progress.emit(self.current_task,self.total_tasks)
+                pbar.update(1)  # 스레드 완료 시 진행 상황 업데이트
+                self.current_task += 1
+                self.update_progress.emit(self.current_task,self.total_tasks)
+                with self.lock:
+                    if max_val < self.threshold:
+                        continue
+                    
+                    if max_val > best_val:
+                        best_val = max_val
+                        best_match = resized_template
+                        best_scale = scale
+                        best_loc = max_loc
+                        is_match = True
+            
             with self.lock:
-                if max_val < self.threshold:
-                    continue
-                
-                if max_val > best_val:
-                    best_val = max_val
-                    best_match = resized_template
-                    best_scale = scale
-                    best_loc = max_loc
-                    is_match = True
-        
-        with self.lock:
-            if not is_match: # match 결과물이 없는 경우 예외처리
-                return
-            self.matches.append((best_loc, best_scale, result[best_loc[1], best_loc[0]], template_tuple))
+                if not is_match: # match 결과물이 없는 경우 예외처리
+                    return
+                self.matches.append((best_loc, best_scale, result[best_loc[1], best_loc[0]], template_tuple))
                 
     def run(self):
         threads = []
-        self.total_tasks = len(self.templates) * len(np.arange(self.scale_range[0], self.scale_range[1], self.scale_step))
+        works_len = len(self.templates)
+        self.total_tasks = works_len * len(np.arange(self.scale_range[0], self.scale_range[1], self.scale_step))
         self.current_task = 0
+
+        # 최대 스레드 개수를 8으로 제한
+        max_threads = 8
+        semaphore = threading.Semaphore(max_threads)
+
         with tqdm(total=self.total_tasks, desc="Matching templates") as pbar:
             while len(self.templates) > 0:
                 template = self.templates.pop(0)
-                thread = threading.Thread(target=self.match_templates, args=(template, pbar))
+                thread = threading.Thread(target=self.match_templates, args=(semaphore,template, pbar))
                 threads.append(thread)
                 thread.start()
 
@@ -158,63 +167,63 @@ class TemplateMatcher:
         self.total_task = 0
         self.templates = []
 
-    def match_templates(self, gray_frame, pbar):
-        
-        for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_step):
-            resized_template = cv2.resize(self.template, (0, 0), fx=scale, fy=scale)
-            result = cv2.matchTemplate(gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
-            locations = np.where(result >= self.threshold)
+    def match_templates(self, semaphore, gray_frame, pbar):
+        with semaphore:
+            for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_step):
+                resized_template = cv2.resize(self.template, (0, 0), fx=scale, fy=scale)
+                result = cv2.matchTemplate(gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
+                locations = np.where(result >= self.threshold)
 
-            pbar.update(1)  # 스레드 완료 시 진행 상황 업데이트
-            self.current_task += 1
-            with self.lock:
-                for loc in zip(*locations[::-1]):
-                    self.matches.append((loc, scale, result[loc[1], loc[0]]))
+                pbar.update(1)  # 스레드 완료 시 진행 상황 업데이트
+                self.current_task += 1
+                with self.lock:
+                    for loc in zip(*locations[::-1]):
+                        self.matches.append((loc, scale, result[loc[1], loc[0]]))
 
-    def match_a_template(self, gray_frame, pbar):
-        
-        for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_step):
-            
-            resized_template = cv2.resize(self.template, (0, 0), fx=scale, fy=scale)
-            result = cv2.matchTemplate(gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
-            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+    def match_a_template(self, semaphore, gray_frame, pbar):
+        with semaphore:
+            for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_step):
+                
+                resized_template = cv2.resize(self.template, (0, 0), fx=scale, fy=scale)
+                result = cv2.matchTemplate(gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
+                min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
 
-            pbar.update(1)  # 스레드 완료 시 진행 상황 업데이트
-            self.current_task += 1
-            with self.lock:
-                if max_val > self.best_val:
-                    self.best_val = max_val
-                    self.best_match = resized_template
-                    self.best_scale = scale
-                    self.best_loc = max_loc
+                pbar.update(1)  # 스레드 완료 시 진행 상황 업데이트
+                self.current_task += 1
+                with self.lock:
+                    if max_val > self.best_val:
+                        self.best_val = max_val
+                        self.best_match = resized_template
+                        self.best_scale = scale
+                        self.best_loc = max_loc 
     
-    def match_mixed_templates(self, gray_frame, template_tuple, pbar):
-        
-        template = template_tuple[1]
-        
-        best_match = None
-        best_val = -1
-        best_scale = 1.0
-        best_loc = (0, 0)
-        
-        for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_step):
-            resized_template = cv2.resize(template, (0, 0), fx=scale, fy=scale)
-            result = cv2.matchTemplate(gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
-            # locations = np.where(result >= self.threshold)
-            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+    def match_mixed_templates(self,semaphore, gray_frame, template_tuple, pbar):
+        with semaphore:
+            template = template_tuple[1]
             
-            pbar.update(1)  # 스레드 완료 시 진행 상황 업데이트
-            self.current_task += 1
+            best_match = None
+            best_val = -1
+            best_scale = 1.0
+            best_loc = (0, 0)
+            
+            for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_step):
+                resized_template = cv2.resize(template, (0, 0), fx=scale, fy=scale)
+                result = cv2.matchTemplate(gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
+                # locations = np.where(result >= self.threshold)
+                min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+                
+                pbar.update(1)  # 스레드 완료 시 진행 상황 업데이트
+                self.current_task += 1
+                
+                with self.lock:
+                    if max_val > best_val and max_val >= self.threshold:
+                        best_val = max_val
+                        best_match = resized_template
+                        best_scale = scale
+                        best_loc = max_loc
             
             with self.lock:
-                if max_val > best_val and max_val >= self.threshold:
-                    best_val = max_val
-                    best_match = resized_template
-                    best_scale = scale
-                    best_loc = max_loc
-        
-        with self.lock:
-            self.matches.append((best_loc, best_scale, result[best_loc[1], best_loc[0]], template_tuple))
+                self.matches.append((best_loc, best_scale, result[best_loc[1], best_loc[0]], template_tuple))
     
     # templates 는 dictionary를 갖고 있는 list 타입
     def get_mixed_match(self, image, templates):
@@ -224,6 +233,10 @@ class TemplateMatcher:
         threads = []
         self.total_task = len(templates) * len(np.arange(self.scale_range[0], self.scale_range[1], self.scale_step))
         self.current_task = 0
+        
+        max_threads = 8
+        semaphore = threading.Semaphore(max_threads)
+        
         with tqdm(total=self.total_task, desc="Matching templates") as pbar:
             # for template in templates:
             while len(templates) > 0:
@@ -232,7 +245,7 @@ class TemplateMatcher:
                 template_tuple = [ (k,v) for k,v in template.items()][0]
                 
                 # for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_step):
-                thread = threading.Thread(target=self.match_mixed_templates, args=(gray_frame, template_tuple, pbar))
+                thread = threading.Thread(target=self.match_mixed_templates, args=(semaphore, gray_frame, template_tuple, pbar))
                 threads.append(thread)
                 thread.start()
 
@@ -242,9 +255,13 @@ class TemplateMatcher:
     def get_matches(self, image):
         threads = []
         total_tasks = len(np.arange(self.scale_range[0], self.scale_range[1], self.scale_step))
+        
+        max_threads = 8
+        semaphore = threading.Semaphore(max_threads)
+        
         with tqdm(total=total_tasks, desc="Matching templates") as pbar:
             gray_frame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            thread = threading.Thread(target=self.match_templates, args=(gray_frame, pbar))
+            thread = threading.Thread(target=self.match_templates, args=(semaphore, gray_frame, pbar))
             threads.append(thread)
             thread.start()
 
@@ -256,9 +273,13 @@ class TemplateMatcher:
     def get_a_match(self, image):
         threads = []
         total_tasks = len(np.arange(self.scale_range[0], self.scale_range[1], self.scale_step))
+        
+        max_threads = 8
+        semaphore = threading.Semaphore(max_threads)
+        
         with tqdm(total=total_tasks, desc="Matching templates") as pbar:
             gray_frame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            thread = threading.Thread(target=self.match_a_template, args=(gray_frame, pbar))
+            thread = threading.Thread(target=self.match_a_template, args=(semaphore, gray_frame, pbar))
             threads.append(thread)
             thread.start()
 
