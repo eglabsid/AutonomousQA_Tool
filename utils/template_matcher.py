@@ -157,7 +157,7 @@ class UITemplateMatcher(QThread):
             cv2.rectangle(image, top_left, bottom_right, (0, 255, 0), 4)
             # cv2.putText(image, f'{score:.2f}', (top_left[0], top_left[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
             cv2.putText(image, f'{template[0]}', (top_left[0], top_left[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
-            cv2.imwrite(f"obs_result/{i}.jpg",image)
+            # cv2.imwrite(f"obs_result/{i}.jpg",image)
         return image
         
 class TemplateMatcher:
