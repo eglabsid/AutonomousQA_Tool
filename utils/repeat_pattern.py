@@ -100,9 +100,8 @@ class RepeatPattern(QThread):
         self.handler.sendkey(SendKey.ESC.value)
     
     
-    
     def run(self): # ctrl+esc 로 종료 메시지
-        # self.running = True
+        
         while self.running:
             
             if len(self.items) < 1:

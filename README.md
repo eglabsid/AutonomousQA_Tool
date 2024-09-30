@@ -9,7 +9,8 @@
 1. GUI 기능에 맞는 네이밍 규칙
 2. 기능에 따라 진행되는 GUI가 있다면, 새로운 GUI 폴더의 네이밍은 기능명을 그대로 적용 ( ex) into_scene.jpg -> into_scene/ ) 
 
-+예시 이미지
+
+![AutoQA UI](./images/tool_ui.JPG)
 
 ## 개발환경
 -Language : python 3.15.5

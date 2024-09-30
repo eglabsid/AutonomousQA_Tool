@@ -34,19 +34,30 @@ class UITemplateMatcher(QThread):
 
     __slot__ = ['frame','templates','scale_range','scale_step','threshold','lock']
     
-    def __init__(self, frame, templates, scale_range, scale_step, threshold=0.8):
+    # def __init__(self, frame, templates, scale_range, scale_step, threshold=0.8):
+    def __init__(self, scale_range, scale_step, threshold=0.8):
         super().__init__()
-        self.frame = frame
-        self.templates = templates
+        # self.frame = frame
+        # self.templates = templates
+        self.frame = None
+        self.templates = []
+        self.gray_frame = None
+        
         self.scale_range = scale_range
         self.scale_step = scale_step
         self.threshold = threshold
         
         self.matches = []
         self.lock = threading.Lock()
-        self.gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # self.gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         
         self.iter = 0
+    
+    def update_img_datas(self, frame, templates):
+        self.frame = frame
+        self.gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        self.templates = templates
+        
     
     def match_difference_frames(self, src, des):
         # 두 프레임을 그레이스케일로 변환
@@ -111,6 +122,8 @@ class UITemplateMatcher(QThread):
                 self.matches.append((best_loc, best_scale, result[best_loc[1], best_loc[0]], template_tuple))
                 
     def run(self):
+        print(f"Start ! UITemplateMatcher")
+        self.matches.clear()
         threads = []
         works_len = len(self.templates)
         self.total_tasks = works_len * len(np.arange(self.scale_range[0], self.scale_range[1], self.scale_step))
@@ -119,7 +132,7 @@ class UITemplateMatcher(QThread):
         # 최대 스레드 개수를 8으로 제한
         max_threads = 8
         semaphore = threading.Semaphore(max_threads)
-
+        
         with tqdm(total=self.total_tasks, desc="Matching templates") as pbar:
             while len(self.templates) > 0:
                 template = self.templates.pop(0)
@@ -132,11 +145,10 @@ class UITemplateMatcher(QThread):
 
             result_image = self.draw_matches(self.frame)
             self.finished.emit(result_image)
-            
     
     def stop(self):
         # self.running = False
-        self.stop()
+        self.wait()
         
     def draw_matches(self, image):
         for i,(loc, scale, score, template) in enumerate(self.matches):

@@ -25,6 +25,7 @@ class mainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super(mainWindow, self).__init__()
         self.initUI()
+        self.showNormal()
         
     def initUI(self):
         # UI 파일 로드
@@ -76,6 +77,7 @@ class mainWindow(QtWidgets.QMainWindow):
         
         self.auto_play.clicked.connect(self.play_auto)
         
+        
         # 프로세스 handler
         # process_name = 'Geometry Dash'
         # self.process_name.setText(process_name)
@@ -83,6 +85,8 @@ class mainWindow(QtWidgets.QMainWindow):
         # self.pcheck.stateChanged.connect(self.toggle_process_name)
         # process_name = 'GeometryDash.exe'
         self.handler = WindowProcessHandler()
+        
+        self.matcher = UITemplateMatcher(scale_range=(0.7, 1.0), scale_step=0.1)#,threshold=threshhold)
         
         # List-up Running Process
         proc_lst = self.handler.get_running_process_list()
@@ -169,9 +173,12 @@ class mainWindow(QtWidgets.QMainWindow):
             # msg = self.handler.connect_application_by_handler() #pywinauto 이용방법
             msg = self.handler.connect_application_by_process_name(self.process_list.currentText())
             self.log_text.append(msg)
+            if self.handler.window_process == None:
+                self.progress_bar.setFormat(f"{msg}")
+                return
         else:
             self.handler.window_process.activate()
-            
+        
         # folder_dir = 'screen/UI'
         if len(self.gui_img_files) < 1:
             self.progress_bar.setFormat(f"경로 :'{self.gui_folder.text()}' 내에 이미지 파일이 없습니다.")
@@ -185,7 +192,10 @@ class mainWindow(QtWidgets.QMainWindow):
         templates = self.make_gui_template(self.gui_img_files)
 
         # threshhold = 0.9
-        self.matcher = UITemplateMatcher(image,templates, scale_range=(0.7, 1.0), scale_step=0.1)#,threshold=threshhold)
+        # self.matcher = UITemplateMatcher(image,templates, scale_range=(0.7, 1.0), scale_step=0.1)#,threshold=threshhold)
+        # self.matcher.frame = image
+        # self.matcher.templates = templates
+        self.matcher.update_img_datas(image,templates)
         self.matcher.update_progress.connect(self.update_status_bar)  # 시그널 연결
         self.matcher.finished.connect(self.on_finished)  # 작업 완료 시그널 연결
         self.matcher.start()  # QThread 시작
@@ -198,30 +208,34 @@ class mainWindow(QtWidgets.QMainWindow):
             
             # 1회 재시도 - 스크린 미 캡쳐되었을경우 
             if self.matcher.iter < 1:
-                self.match_gui_templates()
                 self.matcher.iter += 1
-                self.repeater.stop()
+                self.match_gui_templates()
+                pass
+            
+            # 루트 한번
+            elif self.matcher.iter == 1:
+                self.gui_img_files = get_all_images(self.gui_resource_root_dir)
+                self.matcher.iter += 1
+                self.match_gui_templates()                
                 pass
             
             # 모든 폴더에 대해 재 시도
-            if len(self.gui_subfolders)>0:
+            elif len(self.gui_subfolders)>0:
                 subfodler = self.gui_subfolders.pop()
                 search = self.gui_resource_root_dir+f"/{subfodler}"
                 # GUI 폴더 경로상의 이미지 
                 self.gui_img_files = get_all_images(search)
+                self.matcher.iter +=1
+                # print(self.matcher.iter)
                 self.match_gui_templates()
-                # self.repeater.stop()  
                 pass
-                
-            # 루트 한번
-            if self.matcher.iter == 1:
-                self.gui_img_files = get_all_images(self.gui_resource_root_dir)
-                self.match_gui_templates()
-                self.matcher.iter += 1
-                pass
+            # elif self.matcher.iter == len():
+            
+            return
         
         self.matcher.iter = 0
         
+        # print(f"on_finished")
         self.progress_bar.setFormat(" I got it.! ")
         self.gui_search.setEnabled(True)
         
@@ -436,12 +450,9 @@ class mainWindow(QtWidgets.QMainWindow):
         # 윈도우 화면 전체 캡쳐
         image = self.handler.caputer_monitor_to_cv_img()
         
-        self.matcher = UITemplateMatcher(image,templates, scale_range=(0.7, 1.0), scale_step=0.1)#,threshold=threshhold)
-        self.matcher.update_progress.connect(self.update_status_bar)  # 시그널 연결
-        self.matcher.finished.connect(self.on_finished)  # 작업 완료 시그널 연결
+        self.matcher.update_img_datas(image,templates)
         self.matcher.start()  # QThread 시작
-        # QThread 쪽으로 호출
-        self.rematch.emit(self.matcher)
+        self.rematch.emit(self.matcher)# QThread 쪽으로 호출
         
     
         
