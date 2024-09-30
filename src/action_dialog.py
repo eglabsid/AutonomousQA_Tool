@@ -4,7 +4,6 @@ from PyQt5 import uic, QtWidgets
 from PyQt5.QtGui import QIcon, QCursor, QIntValidator
 from PyQt5.QtCore import QTimer, Qt
 
-from pynput import mouse
 
 dialog_ui = 'src/action_dialog.ui'
 
