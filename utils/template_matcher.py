@@ -74,9 +74,10 @@ class UITemplateMatcher(QThread):
         contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         is_diff = False
+        threshhold = 500
         # 원본 프레임에 변화된 부분을 강조
         for contour in contours:
-            if cv2.contourArea(contour) > 600:  # 너무 작은 변화는 무시
+            if cv2.contourArea(contour) > threshhold:  # 너무 작은 변화는 무시
                 is_diff = True
                 x, y, w, h = cv2.boundingRect(contour)
                 cv2.rectangle(src, (x, y), (x + w, y + h), (0, 0, 255), 5)
@@ -157,7 +158,7 @@ class UITemplateMatcher(QThread):
             cv2.rectangle(image, top_left, bottom_right, (0, 255, 0), 4)
             # cv2.putText(image, f'{score:.2f}', (top_left[0], top_left[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
             cv2.putText(image, f'{template[0]}', (top_left[0], top_left[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
-            # cv2.imwrite(f"obs_result/{i}.jpg",image)
+            cv2.imwrite(f"obs_result/{i}.jpg",image)
         return image
         
 class TemplateMatcher:

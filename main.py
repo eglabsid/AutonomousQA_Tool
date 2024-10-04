@@ -140,7 +140,7 @@ class mainWindow(QtWidgets.QMainWindow):
             self.repeater.start()
             
             # 윈도우 창 최소화            
-            self.showMinimized()
+            # self.showMinimized()
                
     def stop_routine(self):
         if self.repeater is not None and self.repeater.isRunning():
