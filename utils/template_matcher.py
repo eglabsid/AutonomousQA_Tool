@@ -84,7 +84,7 @@ class UITemplateMatcher(QThread):
                 break
 
         return is_diff
-
+        
     def multi_scale_template_matching(self,semaphore, template, pbar):
         with semaphore:
             # Dict 처리
@@ -108,6 +108,7 @@ class UITemplateMatcher(QThread):
                 # Canny 엣지 검출기 적용
                 edges_image = cv2.Canny(self.gray_frame, canny_threshold1, canny_threshold2)
                 edges_template = cv2.Canny(resized_template, canny_threshold1, canny_threshold2)
+                
                 
                 # result = cv2.matchTemplate(self.gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
                 result = cv2.matchTemplate(edges_image, edges_template, cv2.TM_CCOEFF_NORMED)
