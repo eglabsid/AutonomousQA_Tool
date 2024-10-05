@@ -10,6 +10,7 @@ from src.interval_dialog import IntervalDialog
 from utils.process_handler import WindowProcessHandler
 from utils.repeat_pattern import RepeatPattern, ItemType, SendKey
 from utils.template_matcher import UITemplateMatcher, TemplateMatcher, get_all_images, get_subfolders
+from utils.ocr_finder import OCRFinder
 
 # opencv
 import cv2
@@ -63,6 +64,7 @@ class mainWindow(QtWidgets.QMainWindow):
         # gui 및 process 확인 기능
         self.confirm_process.clicked.connect(self.confirm_running_process)
         self.gui_search.clicked.connect(self.match_gui_templates) 
+        self.ocr_search.clicked.connect(self.find_ocr)
         
         self.gui_resource_root_dir = f"{os.getcwd()}/screen/UI" # 단일 path
         self.gui_resource_root_dir = self.gui_resource_root_dir.replace("\\","/")
@@ -84,9 +86,10 @@ class mainWindow(QtWidgets.QMainWindow):
         # self.process_name.setEnabled(False)
         # self.pcheck.stateChanged.connect(self.toggle_process_name)
         # process_name = 'GeometryDash.exe'
-        self.handler = WindowProcessHandler()
         
-        self.matcher = UITemplateMatcher(scale_range=(0.7, 1.0), scale_step=0.1)#,threshold=threshhold)
+        self.handler = WindowProcessHandler()
+        self.matcher = UITemplateMatcher(scale_range=(0.7, 1.1), scale_step=0.1)#,threshold=threshhold)
+        self.ocrfinder = OCRFinder()
         
         # List-up Running Process
         proc_lst = self.handler.get_running_process_list()
@@ -149,7 +152,6 @@ class mainWindow(QtWidgets.QMainWindow):
             self.repeater.wait()
             self.showNormal()
 
-
     def open_browser(self):
         self.gui_resource_root_dir = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select Directory')
         if self.gui_resource_root_dir:
@@ -166,7 +168,26 @@ class mainWindow(QtWidgets.QMainWindow):
             template[name] = cv2.imread(file,0)
             templates.append(template)
         return templates
-            
+    
+    def find_ocr(self):
+        # process 접근
+        if self.handler.window_process == None:
+            # msg = self.handler.connect_application_by_handler() #pywinauto 이용방법
+            msg = self.handler.connect_application_by_process_name(self.process_list.currentText())
+            self.log_text.append(msg)
+            if self.handler.window_process == None:
+                self.progress_bar.setFormat(f"{msg}")
+                return
+        else:
+            self.handler.window_process.activate()
+        
+        # self.handler.connect_application_by_handler(self.process_list.currentText())
+        image  = self.handler.captuer_screen_on_application()
+        self.ocrfinder.set_frame(image)
+        self.ocrfinder.set_region(image)
+        self.ocrfinder.finished.connect(self.ocr_on_finished)
+        self.ocrfinder.start()
+    
     def match_gui_templates(self):
         # process 접근
         if self.handler.window_process == None:
@@ -197,11 +218,19 @@ class mainWindow(QtWidgets.QMainWindow):
         # self.matcher.templates = templates
         self.matcher.update_img_datas(image,templates)
         self.matcher.update_progress.connect(self.update_status_bar)  # 시그널 연결
-        self.matcher.finished.connect(self.on_finished)  # 작업 완료 시그널 연결
+        self.matcher.finished.connect(self.match_on_finished)  # 작업 완료 시그널 연결
         self.matcher.start()  # QThread 시작
         self.rematch.emit(self.matcher) 
 
-    def on_finished(self, result_image):
+    def ocr_on_finished(self, results):
+        
+        print(results)
+        result_img = self.ocrfinder.draw()
+        self.gui_pixmap = self.view_resized_img_on_widget(result_img,self.gui_result.width(),self.gui_result.height())
+        self.gui_result.setPixmap(self.gui_pixmap)
+        
+    
+    def match_on_finished(self, result_image):
         
         # GUI 상의 이미지 검출이 되지 않았을 때, 재시도구간
         if len(self.matcher.matches) == 0:
@@ -301,8 +330,6 @@ class mainWindow(QtWidgets.QMainWindow):
             selectedItem = self.action_sequence.item(selectedRow)
             self.log_text.append(f"제거 : {selectedItem.text()}")
             self.action_sequence.takeItem(selectedRow)
-    
-    
     
     def add_actions(self):
         dialog = ActionDialog(self)  # ActionDialog 생성

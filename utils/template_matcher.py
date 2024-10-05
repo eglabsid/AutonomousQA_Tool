@@ -97,7 +97,9 @@ class UITemplateMatcher(QThread):
             best_scale = 1.0
             best_loc = (-1, -1)
             is_match = False
-            for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_step):
+            # total_range = int(abs(self.scale_range[1]-self.scale_range[0]) // self.scale_step)
+            
+            for i,scale in enumerate(np.arange(self.scale_range[0], self.scale_range[1], self.scale_step)):
                 resized_template = cv2.resize(img, (0, 0), fx=scale, fy=scale)
                 result = cv2.matchTemplate(self.gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
                 # locations = np.where(result >= self.threshold)
@@ -116,6 +118,11 @@ class UITemplateMatcher(QThread):
                         best_scale = scale
                         best_loc = max_loc
                         is_match = True
+                    
+                    if is_match:
+                        # pbar.update(total_range-i)
+                        # self.current_task += total_range-i
+                        break
             
             with self.lock:
                 if not is_match: # match 결과물이 없는 경우 예외처리
@@ -123,7 +130,7 @@ class UITemplateMatcher(QThread):
                 self.matches.append((best_loc, best_scale, result[best_loc[1], best_loc[0]], template_tuple))
                 
     def run(self):
-        print(f"Start ! UITemplateMatcher")
+        # print(f"Start ! UITemplateMatcher")
         self.matches.clear()
         threads = []
         works_len = len(self.templates)
@@ -158,7 +165,7 @@ class UITemplateMatcher(QThread):
             cv2.rectangle(image, top_left, bottom_right, (0, 255, 0), 4)
             # cv2.putText(image, f'{score:.2f}', (top_left[0], top_left[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
             cv2.putText(image, f'{template[0]}', (top_left[0], top_left[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
-            cv2.imwrite(f"obs_result/{i}.jpg",image)
+            # cv2.imwrite(f"obs_result/{i}.jpg",image)
         return image
         
 class TemplateMatcher:

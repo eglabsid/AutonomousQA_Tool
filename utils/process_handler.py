@@ -60,14 +60,14 @@ def os_specific_task(os_name):
 
 class WindowProcessHandler():
     
-    __slot__ = ['process_name','hwnd','window_process']
+    __slot__ = ['hwnd','window_process']
     
-    def __init__(self,  ):
+    def __init__(self):
         # DPI 인식 활성화
         ctypes.windll.shcore.SetProcessDpiAwareness(2)
         
         # self.frame = frame
-        self.process_name = None
+        
         self.hwnd = None
         self.window_process = None
     
@@ -107,9 +107,9 @@ class WindowProcessHandler():
             message = self.check_process(proc)
             print(message)
 
-            self.hwnd = self.get_handler_of_window_process(proc.info['name'])
+            # self.hwnd = self.get_handler_of_window_process(proc.info['name'])
             # 윈도우 활성화
-            self.window_process = self.find_window_by_pid(proc.info['pid'])
+            self.hwnd, self.window_process = self.find_hwnd_window_by_pid(proc.info['pid'])
             if self.window_process:
                 self.window_process.activate()
                 message += "\n Window activated successfully!"
@@ -125,18 +125,18 @@ class WindowProcessHandler():
 
     # 프로세스 ID를 기반으로 윈도우 찾기
     @os_specific_task("Windows")
-    def find_window_by_pid(self,pid):
+    def find_hwnd_window_by_pid(self,pid):
         def callback(hwnd, pid):
             _, found_pid = win32process.GetWindowThreadProcessId(hwnd)
             if found_pid == pid:
-                windows.append(hwnd)
+                hwnds.append(hwnd)
             return True
 
-        windows = []
+        hwnds = []
         win32gui.EnumWindows(callback, pid)
-        if windows:
-            return gw.Win32Window(windows[0])
-        return None
+        if hwnds:
+            return hwnds[0], gw.Win32Window(hwnds[0])
+        return None, None
 
     # 프로세스 로드 상태 체크 함수
     def check_process(self,proc):
@@ -152,33 +152,7 @@ class WindowProcessHandler():
                 message = "Process is not running."
         except psutil.NoSuchProcess:
             message = "Process no longer exists."
-        return message
-
-    @os_specific_task("Windows")
-    def get_handler_of_window_process(self,process_name):
-        def callback(hwnd, hwnds):
-            if win32gui.IsWindowVisible(hwnd) and win32gui.IsWindowEnabled(hwnd):
-                if process_name.lower() in win32gui.GetWindowText(hwnd).lower():
-                    hwnds.append(hwnd)
-            return True
-        hwnds = []
-        win32gui.EnumWindows(callback, hwnds)
-        return hwnds[0] if hwnds else None
-    
-    @os_specific_task("Windows")
-    def connect_application_by_handler(self):
-        message = ""
-        try :
-            self.hwnd = self.get_handler_of_window_process(self.process_name)
-            app = Application().connect(handle=self.hwnd)
-            self.window_process = app.top_window()
-            self.window_process.set_focus()
-            message += "Connect already running process"
-            
-        except Exception as e:
-            message += f"An unexpected error occurred: {e}"
-            # sys.exit(1)
-        return message        
+        return message  
     
     @os_specific_task("Windows")
     def mouseclick(self, button: str, coords: tuple):
@@ -245,17 +219,15 @@ class WindowProcessHandler():
         win32gui.ReleaseDC(self.hwnd, hwndDC)
 
         if result == 1:
-            # folder_dir = os.getcwd()+"/screen"
-            # create_directory_if_not_exists(folder_dir)
-            # saved_file = folder_dir+"/capture.jpg"
-            # screenshot.save(saved_file)
-            # print(f"Screenshot saved as {saved_file}")
+            folder_dir = os.getcwd()+"/screen"
+            create_directory_if_not_exists(folder_dir)
+            saved_file = folder_dir+"/capture.jpg"
+            screenshot.save(saved_file)
+            print(f"Screenshot saved as {saved_file}")
             return cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
         else:
             print("Failed to capture window")
             return None
-
-
         
 @os_specific_task("Windows")
 def main():
