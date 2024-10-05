@@ -85,7 +85,7 @@ class UITemplateMatcher(QThread):
 
         return is_diff
 
-    def match_templates(self,semaphore, template, pbar):
+    def multi_scale_template_matching(self,semaphore, template, pbar):
         with semaphore:
             # Dict 처리
             template_tuple = [ (k,v) for k,v in template.items()][0]
@@ -99,10 +99,18 @@ class UITemplateMatcher(QThread):
             is_match = False
             # total_range = int(abs(self.scale_range[1]-self.scale_range[0]) // self.scale_step)
             
+            # Canny 엣지 검출기 임계값 설정
+            canny_threshold1 = 50
+            canny_threshold2 = 150
+            
             for i,scale in enumerate(np.arange(self.scale_range[0], self.scale_range[1], self.scale_step)):
                 resized_template = cv2.resize(img, (0, 0), fx=scale, fy=scale)
-                result = cv2.matchTemplate(self.gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
-                # locations = np.where(result >= self.threshold)
+                # Canny 엣지 검출기 적용
+                edges_image = cv2.Canny(self.gray_frame, canny_threshold1, canny_threshold2)
+                edges_template = cv2.Canny(resized_template, canny_threshold1, canny_threshold2)
+                
+                # result = cv2.matchTemplate(self.gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
+                result = cv2.matchTemplate(edges_image, edges_template, cv2.TM_CCOEFF_NORMED)
                 min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
 
                 pbar.update(1)  # 스레드 완료 시 진행 상황 업데이트
@@ -144,7 +152,7 @@ class UITemplateMatcher(QThread):
         with tqdm(total=self.total_tasks, desc="Matching templates") as pbar:
             while len(self.templates) > 0:
                 template = self.templates.pop(0)
-                thread = threading.Thread(target=self.match_templates, args=(semaphore,template, pbar))
+                thread = threading.Thread(target=self.multi_scale_template_matching, args=(semaphore,template, pbar))
                 threads.append(thread)
                 thread.start()
 
