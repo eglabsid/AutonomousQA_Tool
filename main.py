@@ -9,7 +9,7 @@ from src.interval_dialog import IntervalDialog
 
 from utils.process_handler import WindowProcessHandler
 from utils.repeat_pattern import RepeatPattern, ItemType, SendKey
-from utils.template_matcher import UITemplateMatcher, TemplateMatcher, get_all_images, get_subfolders
+from utils.template_matcher import UITemplateMatcher, get_all_images, get_subfolders #,load_and_resize_image
 from utils.ocr_finder import OCRFinder
 
 # opencv
@@ -88,7 +88,8 @@ class mainWindow(QtWidgets.QMainWindow):
         # process_name = 'GeometryDash.exe'
         
         self.handler = WindowProcessHandler()
-        self.matcher = UITemplateMatcher(scale_range=(0.7, 1.1), scale_step=0.1)#,threshold=threshhold)
+        # self.matcher = UITemplateMatcher(scale_range=(0.7, 1.5, 0.1))
+        self.matcher = UITemplateMatcher(scale_range=(0.02, 0.7, 0.02))
         self.ocrfinder = OCRFinder()
         
         # List-up Running Process
@@ -165,7 +166,9 @@ class mainWindow(QtWidgets.QMainWindow):
             name = file.split('.')[0]
             print(name)
             template = {}
-            template[name] = cv2.imread(file,0)
+            # template[name] = load_and_resize_image(file)
+            # template[name] =  cv2.imread(file, cv2.IMREAD_COLOR)
+            template[name] =  cv2.imread(file, cv2.IMREAD_GRAYSCALE)
             templates.append(template)
         return templates
     
@@ -212,6 +215,14 @@ class mainWindow(QtWidgets.QMainWindow):
         # GUI 폴더 경로상의 이미지 
         templates = self.make_gui_template(self.gui_img_files)
 
+        # scale range 조정부분
+        h, w,_ = self.handler.captuer_screen_on_application().shape
+        if w > 2048 and w < 2560:
+            self.matcher.scale_range=(0.5, 1.2, 0.1)
+        elif w < 2048:
+            self.matcher.scale_range=(0.02, 0.7, 0.02)
+        else:
+            self.matcher.scale_range=(0.8, 2.0, 0.1)
         # threshhold = 0.9
         # self.matcher = UITemplateMatcher(image,templates, scale_range=(0.7, 1.0), scale_step=0.1)#,threshold=threshhold)
         # self.matcher.frame = image
@@ -259,7 +270,8 @@ class mainWindow(QtWidgets.QMainWindow):
                 self.match_gui_templates()
                 pass
             # elif self.matcher.iter == len():
-            
+            self.progress_bar.setFormat(" I can't ")
+            self.gui_search.setEnabled(True)    
             return
         
         self.matcher.iter = 0
@@ -399,7 +411,8 @@ class mainWindow(QtWidgets.QMainWindow):
         for loc, scale, score, template_tuple in matcher.matches:    
             path = template_tuple[0].split('\\')[-1]
             name = path.split('.')[0]
-            h,w = template_tuple[1].shape # 중심좌표
+            # h,w,_= template_tuple[1].shape # 중심좌표
+            h,w= template_tuple[1].shape # 중심좌표
             gui_dic = {} # gui 유사도, 좌표, ui name 탐색
             mc_loc = [loc[0] + int(w * scale * 0.5), loc[1] + int(h * scale * 0.5)]
             gui_dic[name] = ( score , mc_loc )

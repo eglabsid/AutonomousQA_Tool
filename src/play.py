@@ -61,7 +61,7 @@ class ScreenCaptureThread(QThread):
         gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         matcher = TemplateMatcher(self.template, scale_range, scale_step)
         # best_val, best_match, best_scale, best_loc = matcher.get_a_match(gray_frame)
-        return matcher.get_a_match(gray_frame)
+        return matcher.get_a_multi_scale_match(gray_frame)
         
     
     def crop_template(self, frame, best_match, best_loc):

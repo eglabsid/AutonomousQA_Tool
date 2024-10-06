@@ -2,12 +2,19 @@ import cv2
 import numpy as np
 import threading
 
+import matplotlib.pyplot as plt
+
 import os
 import glob
 from tqdm import tqdm
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QStatusBar
 from PyQt5.QtCore import pyqtSignal, QThread
+
+from utils.score_of_sds import find_best_match,resize_image
+
+from concurrent.futures import ThreadPoolExecutor,ProcessPoolExecutor, as_completed
+from threading import Semaphore
 
 def get_subfolders(root_folder):
     subfolders = []
@@ -32,10 +39,10 @@ class UITemplateMatcher(QThread):
     update_progress = pyqtSignal(int, int)  # 현재 진행 상황과 총 작업 수를 전달하는 시그널
     finished = pyqtSignal(np.ndarray)  # 작업 완료 시 결과 이미지를 전달하는 시그널
 
-    __slot__ = ['frame','templates','scale_range','scale_step','threshold','lock']
+    __slot__ = ['frame','templates','scale_range','threshold','lock']
     
-    # def __init__(self, frame, templates, scale_range, scale_step, threshold=0.8):
-    def __init__(self, scale_range, scale_step, threshold=0.8):
+    # def __init__(self, frame, templates, scale_range, threshold=0.8):
+    def __init__(self, scale_range, threshold=0.8):
         super().__init__()
         # self.frame = frame
         # self.templates = templates
@@ -44,7 +51,6 @@ class UITemplateMatcher(QThread):
         self.gray_frame = None
         
         self.scale_range = scale_range
-        self.scale_step = scale_step
         self.threshold = threshold
         
         self.matches = []
@@ -84,40 +90,73 @@ class UITemplateMatcher(QThread):
                 break
 
         return is_diff
+    
+    def sds_multi_scale_template_matching(self,semaphore, template, pbar):
+        with semaphore:
+            # Dict 처리
+            template_tuple = [ (k,v) for k,v in template.items()][0]
+            # name = template_tuple[0]
+            template_img = template_tuple[1]
+            
+            best_match = None
+            best_val = -1
+            best_scale = 1.0
+            best_loc = (-1, -1)
+            # total_range = int(abs(self.scale_range[1]-self.scale_range[0]) // self.self.scale_range[2])
+ 
+            for i,scale in enumerate(np.arange(self.scale_range[0], self.scale_range[1], self.scale_range[2])):
+                
+                resized_template = cv2.resize(template_img, (0, 0), fx=scale, fy=scale)
+                window_size = resized_template.shape[:2]
+                stride = 10 # 10
+                best_score, best_loc, best_scale = find_best_match(resized_template,self.frame,window_size, stride,self.scale_range)
+                
+                pbar.update(1)  # 스레드 완료 시 진행 상황 업데이트
+                self.current_task += 1
+                self.update_progress.emit(self.current_task,self.total_tasks)
+                with self.lock:
+                    # 히트맵 생성
+                    # plt.imshow(result, cmap='hot', interpolation='nearest')
+                    # plt.colorbar()
+                    # plt.title('Heatmap of Image')
+                    # plt.show()
+                    print(f"sds_multi_scale_template_matching : {best_loc}")
+                    self.matches.append((best_loc, best_scale, best_score, template_tuple))
         
     def multi_scale_template_matching(self,semaphore, template, pbar):
         with semaphore:
             # Dict 처리
             template_tuple = [ (k,v) for k,v in template.items()][0]
             # name = template_tuple[0]
-            img = template_tuple[1]
+            template_img = template_tuple[1]
             
             best_match = None
             best_val = -1
             best_scale = 1.0
             best_loc = (-1, -1)
             is_match = False
-            # total_range = int(abs(self.scale_range[1]-self.scale_range[0]) // self.scale_step)
+            # total_range = int(abs(self.scale_range[1]-self.scale_range[0]) // self.scale_range[2])
             
             # Canny 엣지 검출기 임계값 설정
-            canny_threshold1 = 50
-            canny_threshold2 = 150
+            # canny_threshold1 = 150
+            # canny_threshold2 = 300
             
-            for i,scale in enumerate(np.arange(self.scale_range[0], self.scale_range[1], self.scale_step)):
-                resized_template = cv2.resize(img, (0, 0), fx=scale, fy=scale)
+            for i,scale in enumerate(np.arange(self.scale_range[0], self.scale_range[1], self.scale_range[2])):
+                resized_template = cv2.resize(template_img, (0, 0), fx=scale, fy=scale)
+                
                 # Canny 엣지 검출기 적용
-                edges_image = cv2.Canny(self.gray_frame, canny_threshold1, canny_threshold2)
-                edges_template = cv2.Canny(resized_template, canny_threshold1, canny_threshold2)
+                # edges_image = cv2.Canny(self.gray_frame, canny_threshold1, canny_threshold2)
+                # edges_template = cv2.Canny(resized_template, canny_threshold1, canny_threshold2)
+                # result = cv2.matchTemplate(edges_image, edges_template, cv2.TM_CCOEFF_NORMED)
                 
-                
-                # result = cv2.matchTemplate(self.gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
-                result = cv2.matchTemplate(edges_image, edges_template, cv2.TM_CCOEFF_NORMED)
+                result = cv2.matchTemplate(self.gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
                 min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
-
+                
                 pbar.update(1)  # 스레드 완료 시 진행 상황 업데이트
                 self.current_task += 1
                 self.update_progress.emit(self.current_task,self.total_tasks)
                 with self.lock:
+                    
                     if max_val < self.threshold:
                         continue
                     
@@ -127,10 +166,10 @@ class UITemplateMatcher(QThread):
                         best_scale = scale
                         best_loc = max_loc
                         is_match = True
+                        # tmp_scale_factor = 1//scale_factor
+                        # best_loc = (int(max_loc[0]*tmp_scale_factor),int(max_loc[1]*tmp_scale_factor))
                     
                     if is_match:
-                        # pbar.update(total_range-i)
-                        # self.current_task += total_range-i
                         break
             
             with self.lock:
@@ -143,7 +182,7 @@ class UITemplateMatcher(QThread):
         self.matches.clear()
         threads = []
         works_len = len(self.templates)
-        self.total_tasks = works_len * len(np.arange(self.scale_range[0], self.scale_range[1], self.scale_step))
+        self.total_tasks = works_len * len(np.arange(self.scale_range[0], self.scale_range[1], self.scale_range[2]))
         self.current_task = 0
 
         # 최대 스레드 개수를 8으로 제한
@@ -154,6 +193,7 @@ class UITemplateMatcher(QThread):
             while len(self.templates) > 0:
                 template = self.templates.pop(0)
                 thread = threading.Thread(target=self.multi_scale_template_matching, args=(semaphore,template, pbar))
+                # thread = threading.Thread(target=self.sds_multi_scale_template_matching, args=(semaphore,template, pbar))
                 threads.append(thread)
                 thread.start()
 
@@ -168,20 +208,22 @@ class UITemplateMatcher(QThread):
         self.wait()
         
     def draw_matches(self, image):
+        # print(f"len self.matches : {self.matches} ,{len(self.matches)}")
         for i,(loc, scale, score, template) in enumerate(self.matches):
+            print(f"{loc}")
             top_left = loc
             bottom_right = (top_left[0] + int(template[1].shape[1] * scale), top_left[1] + int(template[1].shape[0] * scale))
             cv2.rectangle(image, top_left, bottom_right, (0, 255, 0), 4)
             # cv2.putText(image, f'{score:.2f}', (top_left[0], top_left[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
             cv2.putText(image, f'{template[0]}', (top_left[0], top_left[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
-            cv2.imwrite(f"obs_result/{i}.jpg",image)
+            # cv2.imwrite(f"obs_result/{i}.jpg",image)
         return image
         
 class TemplateMatcher:
-    def __init__(self, template, scale_range, scale_step, threshold=0.8):
-        self.template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+    def __init__(self, template, scale_range, threshold=0.8):
+        # self.template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+        self.template = template
         self.scale_range = scale_range
-        self.scale_step = scale_step
         # template 하나에 대해서만 추출할 경우
         self.best_val = -1
         self.best_match = None
@@ -195,10 +237,15 @@ class TemplateMatcher:
         self.current_task = 0
         self.total_task = 0
         self.templates = []
+        
+        # 실험용
+        self.lab_exp_1 = []
+        self.lab_exp_2 = []
+        self.lab_cnt = 0
 
-    def match_templates(self, semaphore, gray_frame, pbar):
+    def multi_scale_match_templates(self, semaphore, gray_frame, pbar):
         with semaphore:
-            for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_step):
+            for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_range[2]):
                 resized_template = cv2.resize(self.template, (0, 0), fx=scale, fy=scale)
                 result = cv2.matchTemplate(gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
                 locations = np.where(result >= self.threshold)
@@ -209,24 +256,64 @@ class TemplateMatcher:
                     for loc in zip(*locations[::-1]):
                         self.matches.append((loc, scale, result[loc[1], loc[0]]))
 
-    def match_a_template(self, semaphore, gray_frame, pbar):
+    def a_match_template(self,semaphore, gray_frame):
+        
         with semaphore:
-            for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_step):
+        
+            str_name = "Template Matching"
+            best_match = None
+            best_val = -1
+            best_scale = 1.0
+            best_loc = (-1, -1)
                 
-                resized_template = cv2.resize(self.template, (0, 0), fx=scale, fy=scale)
-                result = cv2.matchTemplate(gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
-                min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
-
-                pbar.update(1)  # 스레드 완료 시 진행 상황 업데이트
-                self.current_task += 1
-                with self.lock:
-                    if max_val > self.best_val:
-                        self.best_val = max_val
-                        self.best_match = resized_template
-                        self.best_scale = scale
-                        self.best_loc = max_loc 
-    
-    def match_mixed_templates(self,semaphore, gray_frame, template_tuple, pbar):
+            # 템플릿 매칭을 수행합니다.
+            result = cv2.matchTemplate(gray_frame, self.template, cv2.TM_CCOEFF_NORMED)    
+            # 매칭 결과에서 최대값과 위치를 가져옵니다.
+            # min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+            locations = np.where(result >= self.threshold)
+            # pbar.update(1)
+            with self.lock:
+                for loc in zip(*locations[::-1]):
+                    max_loc = loc
+                    max_val = result[loc[1], loc[0]]
+                    # best_scale
+                    if max_val > best_val:
+                        best_val = max_val
+                        best_match = self.template
+                        # best_scale = scale
+                        best_loc = max_loc 
+                    
+            return best_loc, best_scale, best_val, str_name
+            
+                        
+    def multi_scale_match_a_template(self, semaphore, gray_frame, scale):#, pbar):
+    # def multi_scale_match_a_template(self, gray_frame, scale):
+        with semaphore:
+            
+            str_name = "Mult-Scale Template Matching"
+            best_match = None
+            best_val = -1
+            best_scale = 1.0
+            best_loc = (-1, -1)
+            
+            resized_template = cv2.resize(self.template, (0, 0), fx=scale, fy=scale)
+            result = cv2.matchTemplate(gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
+            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+            # pbar.update(1)
+            with self.lock:
+                if max_val < self.threshold:
+                    pass
+            
+                if max_val > best_val:
+                    best_val = max_val
+                    best_match = resized_template
+                    best_scale = scale
+                    best_loc = max_loc 
+                    
+                    
+            return best_loc, best_scale, result[best_loc[1], best_loc[0]], str_name
+                    
+    def multi_scale_match_mixed_templates(self,semaphore, gray_frame, template_tuple, pbar):
         with semaphore:
             template = template_tuple[1]
             
@@ -235,7 +322,7 @@ class TemplateMatcher:
             best_scale = 1.0
             best_loc = (0, 0)
             
-            for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_step):
+            for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_range[2]):
                 resized_template = cv2.resize(template, (0, 0), fx=scale, fy=scale)
                 result = cv2.matchTemplate(gray_frame, resized_template, cv2.TM_CCOEFF_NORMED)
                 # locations = np.where(result >= self.threshold)
@@ -255,12 +342,12 @@ class TemplateMatcher:
                 self.matches.append((best_loc, best_scale, result[best_loc[1], best_loc[0]], template_tuple))
     
     # templates 는 dictionary를 갖고 있는 list 타입
-    def get_mixed_match(self, image, templates):
-        
+    def get_mixed_multi_scale_match(self, image, templates):
+        self.matches.clear()
         gray_frame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         
         threads = []
-        self.total_task = len(templates) * len(np.arange(self.scale_range[0], self.scale_range[1], self.scale_step))
+        self.total_task = len(templates) * len(np.arange(self.scale_range[0], self.scale_range[1], self.scale_range[2]))
         self.current_task = 0
         
         max_threads = 8
@@ -273,51 +360,158 @@ class TemplateMatcher:
                 # Dict 처리
                 template_tuple = [ (k,v) for k,v in template.items()][0]
                 
-                # for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_step):
-                thread = threading.Thread(target=self.match_mixed_templates, args=(semaphore, gray_frame, template_tuple, pbar))
+                # for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_range[2]):
+                thread = threading.Thread(target=self.multi_scale_match_mixed_templates, args=(semaphore, gray_frame, template_tuple, pbar))
                 threads.append(thread)
                 thread.start()
 
             for thread in threads:
                 thread.join()
                 
-    def get_matches(self, image):
+    def get_multi_scale_matches(self, image):
+        self.matches.clear()
         threads = []
-        total_tasks = len(np.arange(self.scale_range[0], self.scale_range[1], self.scale_step))
+        total_tasks = len(np.arange(self.scale_range[0], self.scale_range[1], self.scale_range[2]))
         
         max_threads = 8
         semaphore = threading.Semaphore(max_threads)
         
         with tqdm(total=total_tasks, desc="Matching templates") as pbar:
             gray_frame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            thread = threading.Thread(target=self.match_templates, args=(semaphore, gray_frame, pbar))
+            thread = threading.Thread(target=self.multi_scale_match_templates, args=(semaphore, gray_frame, pbar))
             threads.append(thread)
             thread.start()
 
             for thread in threads:
                 thread.join()
+            
 
         return self.matches
 
-    def get_a_match(self, image):
-        threads = []
-        total_tasks = len(np.arange(self.scale_range[0], self.scale_range[1], self.scale_step))
+    def expierience_lab(self, image):
+        self.matches.clear()
+        
+        h,w,_ = image.shape
+        print(f"해상도 : {w},{h}")
+        if w > 2048 and w < 2560:
+            self.scale_range=(0.5, 1.2, 0.1)
+        elif w < 2048:
+            self.scale_range=(0.02, 0.7, 0.02)
+        else:
+            self.scale_range=(0.8, 3.0, 0.1)
+        
+        gray_frame = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
+        best_score = 0
+        best_location = None
+        best_scale = 1.0
+        best_name = ""
         
         max_threads = 8
         semaphore = threading.Semaphore(max_threads)
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            lab_muti_tm = []
+            lab_ori_tm = []
+            # Orignal TM
+            # with tqdm(desc="Orignal TM") as pbar:
+            lab_ori_tm.append(executor.submit(self.a_match_template,semaphore, gray_frame))
+            
+            for lab_2 in as_completed(lab_ori_tm):
+                location, _, score, name = lab_2.result()
+                self.matches.append((location, _, score, name))
+                
+            total_task_lab_1 =int((self.scale_range[1]-self.scale_range[0])//self.scale_range[2])
+            # Multi-Scale TM
+            # with tqdm(total=total_task_lab_1, desc="Multi-Scale TM") as pbar:
+            for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_range[2]):
+                lab_muti_tm.append(executor.submit(self.multi_scale_match_a_template,semaphore,gray_frame,scale))
+            
+            # 작업이 완료될 때까지 대기하고 결과를 출력합니다.
+            for lab_1 in as_completed(lab_muti_tm):
+                # pbar.update(1)
+                location, scale, score, best_name = lab_1.result()
+                if score > best_score:
+                    best_score = score
+                    best_location = location
+                    best_scale = scale
+
+            self.matches.append((best_location, best_scale, best_score, best_name))
+            
+            # return cv2.cvtColor(np.array(self.draw_matches_lab(image)), cv2.COLOR_RGB2BGR)
+        return self.draw_matches_lab(image)
+                # return self.draw_matches_lab(image)
         
-        with tqdm(total=total_tasks, desc="Matching templates") as pbar:
-            gray_frame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            thread = threading.Thread(target=self.match_a_template, args=(semaphore, gray_frame, pbar))
+    def get_a_multi_scale_match(self, image):
+        self.matches.clear()
+        threads = []
+        # total_tasks = len(np.arange(self.scale_range[0], self.scale_range[1], self.scale_range[2]))
+        max_threads = 8
+        semaphore = threading.Semaphore(max_threads)
+        
+        # gray_frame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        for _ in range(max_threads):
+            thread = threading.Thread(target=self.multi_scale_match_a_template, args=(semaphore, image))
             threads.append(thread)
             thread.start()
 
-            for thread in threads:
-                thread.join()
+        for thread in threads:
+            thread.join()
 
+        
+        # for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_range[2]):
+        #     self.multi_scale_match_a_template(image, scale)
+        # return self.draw_multi_scale_matches(image)
+        
         return self.best_val, self.best_match, self.best_scale, self.best_loc
     
+    
+    def get_a_match(self, image):
+        self.matches.clear()
+        # threads = []
+        
+        # gray_frame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        # for _ in range(2):
+        #     thread = threading.Thread(target=self.a_match_template, args=(gray_frame,))
+        #     threads.append(thread)
+        #     thread.start()
+        
+        # for thread in threads:
+        #     thread.join()
+        self.a_match_template(image)
+        return self.draw_matches(image)
+        # return self.best_val, self.best_match, self.best_scale, self.best_loc
+    
+    def draw_matches_lab(self,image):
+        
+        for (loc, scale, score, name) in self.matches:
+            # print(f"{name} : {loc}")
+            top_left = loc
+            bottom_right = (top_left[0] + int(self.template.shape[1] * scale), top_left[1] + int(self.template.shape[0] * scale))
+            if name == "Template Matching":
+                # print(f"{top_left+bottom_right} < {name}")
+                cv2.rectangle(image, top_left, bottom_right, (0, 255, 0), 4)
+                cv2.putText(image, f'{name} ,{score:.2f}', (bottom_right[0], bottom_right[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2)
+            elif name == "Mult-Scale Template Matching":
+                # print(f"{top_left+bottom_right} < {name}")
+                cv2.rectangle(image, top_left, bottom_right, (255, 0, 0), 4)
+                cv2.putText(image, f'{name} ,{score:.2f}', (top_left[0], top_left[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 0, 0), 2)
+        
+        path = f'lab_result/{self.lab_cnt}.jpg'
+        cv2.imwrite(path,image)
+        self.lab_cnt+=1
+        return image
+    
     def draw_matches(self, image):
+        print(f"draw_matches : {len(self.matches)}")
+        for (loc, scale, score) in self.matches:
+            top_left = loc
+            bottom_right = (top_left[0] + int(self.template.shape[1] * scale), top_left[1] + int(self.template.shape[0] * scale))
+            cv2.rectangle(image, top_left, bottom_right, (0, 0, 255), 4)
+            # cv2.putText(image, f'{score:.2f}', (top_left[0], top_left[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
+        return image
+    
+    def draw_multi_scale_matches(self, image):
+        print(f"draw_multi_scale_matches : {len(self.matches)}")
         for (loc, scale, score) in self.matches:
             top_left = loc
             bottom_right = (top_left[0] + int(self.template.shape[1] * scale), top_left[1] + int(self.template.shape[0] * scale))
@@ -329,7 +523,7 @@ class TemplateMatcher:
         for (loc, scale, score, template) in self.matches:
             top_left = loc
             bottom_right = (top_left[0] + int(template[1].shape[1] * scale), top_left[1] + int(template[1].shape[0] * scale))
-            cv2.rectangle(image, top_left, bottom_right, (0, 255, 0), 2)
+            cv2.rectangle(image, top_left, bottom_right, (255, 0, 0), 3)
             # cv2.putText(image, f'{score:.2f}', (top_left[0], top_left[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
             cv2.putText(image, f'{template[0]}', (top_left[0], top_left[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
         return image
@@ -340,7 +534,7 @@ def main():
     template = cv2.imread('target/b1.jpg', 0)
     image = cv2.imread('screen/screenshot.jpg', 0)
     matcher = TemplateMatcher(template, scale_range=(0.5, 1.2), scale_step=0.1, threshold=0.8)
-    matches = matcher.get_matches(image)
+    matches = matcher.get_multi_scale_matches(image)
 
     # 매치 결과를 이미지에 그리기
     result_image = matcher.draw_matches(cv2.imread('screen/screenshot.jpg'))
