@@ -60,10 +60,11 @@ class OCRFinder(QThread):
         self.regions = [keras_ocr.tools.read(image_path) for image_path in image_paths]
     
     def set_region(self,image:np.array):
-        # canny_threshold1 = 50
-        # canny_threshold2 = 150
+        # canny_threshold1 = 220
+        # canny_threshold2 = 500
         # edges_template = cv2.Canny(image, canny_threshold1, canny_threshold2)
         # edges_template = cv2.cvtColor(edges_template, cv2.COLOR_GRAY2RGB)
+        # self.regions.append(edges_template)
         self.regions.append(image)
         
         
