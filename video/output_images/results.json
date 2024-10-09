@@ -1,0 +1,3026 @@
+[
+    {
+        "name": "bar1",
+        "box": [
+            260,
+            295,
+            360,
+            401
+        ],
+        "coord": [
+            200,
+            180
+        ],
+        "file_path": "output_images/bar1_0_0.5.jpg"
+    },
+    {
+        "name": "bar1",
+        "box": [
+            260,
+            295,
+            360,
+            401
+        ],
+        "coord": [
+            200,
+            180
+        ],
+        "file_path": "output_images/bar1_0_1.0.jpg"
+    },
+    {
+        "name": "bar1",
+        "box": [
+            260,
+            295,
+            360,
+            401
+        ],
+        "coord": [
+            200,
+            180
+        ],
+        "file_path": "output_images/bar1_0_1.5.jpg"
+    },
+    {
+        "name": "bar1",
+        "box": [
+            260,
+            295,
+            360,
+            401
+        ],
+        "coord": [
+            200,
+            180
+        ],
+        "file_path": "output_images/bar1_45_0.5.jpg"
+    },
+    {
+        "name": "bar1",
+        "box": [
+            260,
+            295,
+            360,
+            401
+        ],
+        "coord": [
+            200,
+            180
+        ],
+        "file_path": "output_images/bar1_45_1.0.jpg"
+    },
+    {
+        "name": "bar1",
+        "box": [
+            260,
+            295,
+            360,
+            401
+        ],
+        "coord": [
+            200,
+            180
+        ],
+        "file_path": "output_images/bar1_45_1.5.jpg"
+    },
+    {
+        "name": "bar1",
+        "box": [
+            260,
+            295,
+            360,
+            401
+        ],
+        "coord": [
+            200,
+            180
+        ],
+        "file_path": "output_images/bar1_90_0.5.jpg"
+    },
+    {
+        "name": "bar1",
+        "box": [
+            260,
+            295,
+            360,
+            401
+        ],
+        "coord": [
+            200,
+            180
+        ],
+        "file_path": "output_images/bar1_90_1.0.jpg"
+    },
+    {
+        "name": "bar1",
+        "box": [
+            260,
+            295,
+            360,
+            401
+        ],
+        "coord": [
+            200,
+            180
+        ],
+        "file_path": "output_images/bar1_90_1.5.jpg"
+    },
+    {
+        "name": "bar1",
+        "box": [
+            260,
+            295,
+            360,
+            401
+        ],
+        "coord": [
+            200,
+            180
+        ],
+        "file_path": "output_images/bar1_135_0.5.jpg"
+    },
+    {
+        "name": "bar1",
+        "box": [
+            260,
+            295,
+            360,
+            401
+        ],
+        "coord": [
+            200,
+            180
+        ],
+        "file_path": "output_images/bar1_135_1.0.jpg"
+    },
+    {
+        "name": "bar1",
+        "box": [
+            260,
+            295,
+            360,
+            401
+        ],
+        "coord": [
+            200,
+            180
+        ],
+        "file_path": "output_images/bar1_135_1.5.jpg"
+    },
+    {
+        "name": "bar1",
+        "box": [
+            260,
+            295,
+            360,
+            401
+        ],
+        "coord": [
+            200,
+            180
+        ],
+        "file_path": "output_images/bar1_180_0.5.jpg"
+    },
+    {
+        "name": "bar1",
+        "box": [
+            260,
+            295,
+            360,
+            401
+        ],
+        "coord": [
+            200,
+            180
+        ],
+        "file_path": "output_images/bar1_180_1.0.jpg"
+    },
+    {
+        "name": "bar1",
+        "box": [
+            260,
+            295,
+            360,
+            401
+        ],
+        "coord": [
+            200,
+            180
+        ],
+        "file_path": "output_images/bar1_180_1.5.jpg"
+    },
+    {
+        "name": "bar1",
+        "box": [
+            260,
+            295,
+            360,
+            401
+        ],
+        "coord": [
+            200,
+            180
+        ],
+        "file_path": "output_images/bar1_225_0.5.jpg"
+    },
+    {
+        "name": "bar1",
+        "box": [
+            260,
+            295,
+            360,
+            401
+        ],
+        "coord": [
+            200,
+            180
+        ],
+        "file_path": "output_images/bar1_225_1.0.jpg"
+    },
+    {
+        "name": "bar1",
+        "box": [
+            260,
+            295,
+            360,
+            401
+        ],
+        "coord": [
+            200,
+            180
+        ],
+        "file_path": "output_images/bar1_225_1.5.jpg"
+    },
+    {
+        "name": "bar1",
+        "box": [
+            260,
+            295,
+            360,
+            401
+        ],
+        "coord": [
+            200,
+            180
+        ],
+        "file_path": "output_images/bar1_270_0.5.jpg"
+    },
+    {
+        "name": "bar1",
+        "box": [
+            260,
+            295,
+            360,
+            401
+        ],
+        "coord": [
+            200,
+            180
+        ],
+        "file_path": "output_images/bar1_270_1.0.jpg"
+    },
+    {
+        "name": "bar1",
+        "box": [
+            260,
+            295,
+            360,
+            401
+        ],
+        "coord": [
+            200,
+            180
+        ],
+        "file_path": "output_images/bar1_270_1.5.jpg"
+    },
+    {
+        "name": "bar1",
+        "box": [
+            260,
+            295,
+            360,
+            401
+        ],
+        "coord": [
+            200,
+            180
+        ],
+        "file_path": "output_images/bar1_315_0.5.jpg"
+    },
+    {
+        "name": "bar1",
+        "box": [
+            260,
+            295,
+            360,
+            401
+        ],
+        "coord": [
+            200,
+            180
+        ],
+        "file_path": "output_images/bar1_315_1.0.jpg"
+    },
+    {
+        "name": "bar1",
+        "box": [
+            260,
+            295,
+            360,
+            401
+        ],
+        "coord": [
+            200,
+            180
+        ],
+        "file_path": "output_images/bar1_315_1.5.jpg"
+    },
+    {
+        "name": "playo",
+        "box": [
+            302,
+            290,
+            400,
+            388
+        ],
+        "coord": [
+            194,
+            200
+        ],
+        "file_path": "output_images/playo_0_0.5.jpg"
+    },
+    {
+        "name": "playo",
+        "box": [
+            302,
+            290,
+            400,
+            388
+        ],
+        "coord": [
+            194,
+            200
+        ],
+        "file_path": "output_images/playo_0_1.0.jpg"
+    },
+    {
+        "name": "playo",
+        "box": [
+            302,
+            290,
+            400,
+            388
+        ],
+        "coord": [
+            194,
+            200
+        ],
+        "file_path": "output_images/playo_0_1.5.jpg"
+    },
+    {
+        "name": "playo",
+        "box": [
+            302,
+            290,
+            400,
+            388
+        ],
+        "coord": [
+            194,
+            200
+        ],
+        "file_path": "output_images/playo_45_0.5.jpg"
+    },
+    {
+        "name": "playo",
+        "box": [
+            302,
+            290,
+            400,
+            388
+        ],
+        "coord": [
+            194,
+            200
+        ],
+        "file_path": "output_images/playo_45_1.0.jpg"
+    },
+    {
+        "name": "playo",
+        "box": [
+            302,
+            290,
+            400,
+            388
+        ],
+        "coord": [
+            194,
+            200
+        ],
+        "file_path": "output_images/playo_45_1.5.jpg"
+    },
+    {
+        "name": "playo",
+        "box": [
+            302,
+            290,
+            400,
+            388
+        ],
+        "coord": [
+            194,
+            200
+        ],
+        "file_path": "output_images/playo_90_0.5.jpg"
+    },
+    {
+        "name": "playo",
+        "box": [
+            302,
+            290,
+            400,
+            388
+        ],
+        "coord": [
+            194,
+            200
+        ],
+        "file_path": "output_images/playo_90_1.0.jpg"
+    },
+    {
+        "name": "playo",
+        "box": [
+            302,
+            290,
+            400,
+            388
+        ],
+        "coord": [
+            194,
+            200
+        ],
+        "file_path": "output_images/playo_90_1.5.jpg"
+    },
+    {
+        "name": "playo",
+        "box": [
+            302,
+            290,
+            400,
+            388
+        ],
+        "coord": [
+            194,
+            200
+        ],
+        "file_path": "output_images/playo_135_0.5.jpg"
+    },
+    {
+        "name": "playo",
+        "box": [
+            302,
+            290,
+            400,
+            388
+        ],
+        "coord": [
+            194,
+            200
+        ],
+        "file_path": "output_images/playo_135_1.0.jpg"
+    },
+    {
+        "name": "playo",
+        "box": [
+            302,
+            290,
+            400,
+            388
+        ],
+        "coord": [
+            194,
+            200
+        ],
+        "file_path": "output_images/playo_135_1.5.jpg"
+    },
+    {
+        "name": "playo",
+        "box": [
+            302,
+            290,
+            400,
+            388
+        ],
+        "coord": [
+            194,
+            200
+        ],
+        "file_path": "output_images/playo_180_0.5.jpg"
+    },
+    {
+        "name": "playo",
+        "box": [
+            302,
+            290,
+            400,
+            388
+        ],
+        "coord": [
+            194,
+            200
+        ],
+        "file_path": "output_images/playo_180_1.0.jpg"
+    },
+    {
+        "name": "playo",
+        "box": [
+            302,
+            290,
+            400,
+            388
+        ],
+        "coord": [
+            194,
+            200
+        ],
+        "file_path": "output_images/playo_180_1.5.jpg"
+    },
+    {
+        "name": "playo",
+        "box": [
+            302,
+            290,
+            400,
+            388
+        ],
+        "coord": [
+            194,
+            200
+        ],
+        "file_path": "output_images/playo_225_0.5.jpg"
+    },
+    {
+        "name": "playo",
+        "box": [
+            302,
+            290,
+            400,
+            388
+        ],
+        "coord": [
+            194,
+            200
+        ],
+        "file_path": "output_images/playo_225_1.0.jpg"
+    },
+    {
+        "name": "playo",
+        "box": [
+            302,
+            290,
+            400,
+            388
+        ],
+        "coord": [
+            194,
+            200
+        ],
+        "file_path": "output_images/playo_225_1.5.jpg"
+    },
+    {
+        "name": "playo",
+        "box": [
+            302,
+            290,
+            400,
+            388
+        ],
+        "coord": [
+            194,
+            200
+        ],
+        "file_path": "output_images/playo_270_0.5.jpg"
+    },
+    {
+        "name": "playo",
+        "box": [
+            302,
+            290,
+            400,
+            388
+        ],
+        "coord": [
+            194,
+            200
+        ],
+        "file_path": "output_images/playo_270_1.0.jpg"
+    },
+    {
+        "name": "playo",
+        "box": [
+            302,
+            290,
+            400,
+            388
+        ],
+        "coord": [
+            194,
+            200
+        ],
+        "file_path": "output_images/playo_270_1.5.jpg"
+    },
+    {
+        "name": "playo",
+        "box": [
+            302,
+            290,
+            400,
+            388
+        ],
+        "coord": [
+            194,
+            200
+        ],
+        "file_path": "output_images/playo_315_0.5.jpg"
+    },
+    {
+        "name": "playo",
+        "box": [
+            302,
+            290,
+            400,
+            388
+        ],
+        "coord": [
+            194,
+            200
+        ],
+        "file_path": "output_images/playo_315_1.0.jpg"
+    },
+    {
+        "name": "playo",
+        "box": [
+            302,
+            290,
+            400,
+            388
+        ],
+        "coord": [
+            194,
+            200
+        ],
+        "file_path": "output_images/playo_315_1.5.jpg"
+    },
+    {
+        "name": "avoid3",
+        "box": [
+            350,
+            270,
+            404,
+            368
+        ],
+        "coord": [
+            184,
+            202
+        ],
+        "file_path": "output_images/avoid3_0_0.5.jpg"
+    },
+    {
+        "name": "avoid3",
+        "box": [
+            350,
+            270,
+            404,
+            368
+        ],
+        "coord": [
+            184,
+            202
+        ],
+        "file_path": "output_images/avoid3_0_1.0.jpg"
+    },
+    {
+        "name": "avoid3",
+        "box": [
+            350,
+            270,
+            404,
+            368
+        ],
+        "coord": [
+            184,
+            202
+        ],
+        "file_path": "output_images/avoid3_0_1.5.jpg"
+    },
+    {
+        "name": "avoid3",
+        "box": [
+            350,
+            270,
+            404,
+            368
+        ],
+        "coord": [
+            184,
+            202
+        ],
+        "file_path": "output_images/avoid3_45_0.5.jpg"
+    },
+    {
+        "name": "avoid3",
+        "box": [
+            350,
+            270,
+            404,
+            368
+        ],
+        "coord": [
+            184,
+            202
+        ],
+        "file_path": "output_images/avoid3_45_1.0.jpg"
+    },
+    {
+        "name": "avoid3",
+        "box": [
+            350,
+            270,
+            404,
+            368
+        ],
+        "coord": [
+            184,
+            202
+        ],
+        "file_path": "output_images/avoid3_45_1.5.jpg"
+    },
+    {
+        "name": "avoid3",
+        "box": [
+            350,
+            270,
+            404,
+            368
+        ],
+        "coord": [
+            184,
+            202
+        ],
+        "file_path": "output_images/avoid3_90_0.5.jpg"
+    },
+    {
+        "name": "avoid3",
+        "box": [
+            350,
+            270,
+            404,
+            368
+        ],
+        "coord": [
+            184,
+            202
+        ],
+        "file_path": "output_images/avoid3_90_1.0.jpg"
+    },
+    {
+        "name": "avoid3",
+        "box": [
+            350,
+            270,
+            404,
+            368
+        ],
+        "coord": [
+            184,
+            202
+        ],
+        "file_path": "output_images/avoid3_90_1.5.jpg"
+    },
+    {
+        "name": "avoid3",
+        "box": [
+            350,
+            270,
+            404,
+            368
+        ],
+        "coord": [
+            184,
+            202
+        ],
+        "file_path": "output_images/avoid3_135_0.5.jpg"
+    },
+    {
+        "name": "avoid3",
+        "box": [
+            350,
+            270,
+            404,
+            368
+        ],
+        "coord": [
+            184,
+            202
+        ],
+        "file_path": "output_images/avoid3_135_1.0.jpg"
+    },
+    {
+        "name": "avoid3",
+        "box": [
+            350,
+            270,
+            404,
+            368
+        ],
+        "coord": [
+            184,
+            202
+        ],
+        "file_path": "output_images/avoid3_135_1.5.jpg"
+    },
+    {
+        "name": "avoid3",
+        "box": [
+            350,
+            270,
+            404,
+            368
+        ],
+        "coord": [
+            184,
+            202
+        ],
+        "file_path": "output_images/avoid3_180_0.5.jpg"
+    },
+    {
+        "name": "avoid3",
+        "box": [
+            350,
+            270,
+            404,
+            368
+        ],
+        "coord": [
+            184,
+            202
+        ],
+        "file_path": "output_images/avoid3_180_1.0.jpg"
+    },
+    {
+        "name": "avoid3",
+        "box": [
+            350,
+            270,
+            404,
+            368
+        ],
+        "coord": [
+            184,
+            202
+        ],
+        "file_path": "output_images/avoid3_180_1.5.jpg"
+    },
+    {
+        "name": "avoid3",
+        "box": [
+            350,
+            270,
+            404,
+            368
+        ],
+        "coord": [
+            184,
+            202
+        ],
+        "file_path": "output_images/avoid3_225_0.5.jpg"
+    },
+    {
+        "name": "avoid3",
+        "box": [
+            350,
+            270,
+            404,
+            368
+        ],
+        "coord": [
+            184,
+            202
+        ],
+        "file_path": "output_images/avoid3_225_1.0.jpg"
+    },
+    {
+        "name": "avoid3",
+        "box": [
+            350,
+            270,
+            404,
+            368
+        ],
+        "coord": [
+            184,
+            202
+        ],
+        "file_path": "output_images/avoid3_225_1.5.jpg"
+    },
+    {
+        "name": "avoid3",
+        "box": [
+            350,
+            270,
+            404,
+            368
+        ],
+        "coord": [
+            184,
+            202
+        ],
+        "file_path": "output_images/avoid3_270_0.5.jpg"
+    },
+    {
+        "name": "avoid3",
+        "box": [
+            350,
+            270,
+            404,
+            368
+        ],
+        "coord": [
+            184,
+            202
+        ],
+        "file_path": "output_images/avoid3_270_1.0.jpg"
+    },
+    {
+        "name": "avoid3",
+        "box": [
+            350,
+            270,
+            404,
+            368
+        ],
+        "coord": [
+            184,
+            202
+        ],
+        "file_path": "output_images/avoid3_270_1.5.jpg"
+    },
+    {
+        "name": "avoid3",
+        "box": [
+            350,
+            270,
+            404,
+            368
+        ],
+        "coord": [
+            184,
+            202
+        ],
+        "file_path": "output_images/avoid3_315_0.5.jpg"
+    },
+    {
+        "name": "avoid3",
+        "box": [
+            350,
+            270,
+            404,
+            368
+        ],
+        "coord": [
+            184,
+            202
+        ],
+        "file_path": "output_images/avoid3_315_1.0.jpg"
+    },
+    {
+        "name": "avoid3",
+        "box": [
+            350,
+            270,
+            404,
+            368
+        ],
+        "coord": [
+            184,
+            202
+        ],
+        "file_path": "output_images/avoid3_315_1.5.jpg"
+    },
+    {
+        "name": "avoid1",
+        "box": [
+            300,
+            440,
+            402,
+            544
+        ],
+        "coord": [
+            272,
+            201
+        ],
+        "file_path": "output_images/avoid1_0_0.5.jpg"
+    },
+    {
+        "name": "avoid1",
+        "box": [
+            300,
+            440,
+            402,
+            544
+        ],
+        "coord": [
+            272,
+            201
+        ],
+        "file_path": "output_images/avoid1_0_1.0.jpg"
+    },
+    {
+        "name": "avoid1",
+        "box": [
+            300,
+            440,
+            402,
+            544
+        ],
+        "coord": [
+            272,
+            201
+        ],
+        "file_path": "output_images/avoid1_0_1.5.jpg"
+    },
+    {
+        "name": "avoid1",
+        "box": [
+            300,
+            440,
+            402,
+            544
+        ],
+        "coord": [
+            272,
+            201
+        ],
+        "file_path": "output_images/avoid1_45_0.5.jpg"
+    },
+    {
+        "name": "avoid1",
+        "box": [
+            300,
+            440,
+            402,
+            544
+        ],
+        "coord": [
+            272,
+            201
+        ],
+        "file_path": "output_images/avoid1_45_1.0.jpg"
+    },
+    {
+        "name": "avoid1",
+        "box": [
+            300,
+            440,
+            402,
+            544
+        ],
+        "coord": [
+            272,
+            201
+        ],
+        "file_path": "output_images/avoid1_45_1.5.jpg"
+    },
+    {
+        "name": "avoid1",
+        "box": [
+            300,
+            440,
+            402,
+            544
+        ],
+        "coord": [
+            272,
+            201
+        ],
+        "file_path": "output_images/avoid1_90_0.5.jpg"
+    },
+    {
+        "name": "avoid1",
+        "box": [
+            300,
+            440,
+            402,
+            544
+        ],
+        "coord": [
+            272,
+            201
+        ],
+        "file_path": "output_images/avoid1_90_1.0.jpg"
+    },
+    {
+        "name": "avoid1",
+        "box": [
+            300,
+            440,
+            402,
+            544
+        ],
+        "coord": [
+            272,
+            201
+        ],
+        "file_path": "output_images/avoid1_90_1.5.jpg"
+    },
+    {
+        "name": "avoid1",
+        "box": [
+            300,
+            440,
+            402,
+            544
+        ],
+        "coord": [
+            272,
+            201
+        ],
+        "file_path": "output_images/avoid1_135_0.5.jpg"
+    },
+    {
+        "name": "avoid1",
+        "box": [
+            300,
+            440,
+            402,
+            544
+        ],
+        "coord": [
+            272,
+            201
+        ],
+        "file_path": "output_images/avoid1_135_1.0.jpg"
+    },
+    {
+        "name": "avoid1",
+        "box": [
+            300,
+            440,
+            402,
+            544
+        ],
+        "coord": [
+            272,
+            201
+        ],
+        "file_path": "output_images/avoid1_135_1.5.jpg"
+    },
+    {
+        "name": "avoid1",
+        "box": [
+            300,
+            440,
+            402,
+            544
+        ],
+        "coord": [
+            272,
+            201
+        ],
+        "file_path": "output_images/avoid1_180_0.5.jpg"
+    },
+    {
+        "name": "avoid1",
+        "box": [
+            300,
+            440,
+            402,
+            544
+        ],
+        "coord": [
+            272,
+            201
+        ],
+        "file_path": "output_images/avoid1_180_1.0.jpg"
+    },
+    {
+        "name": "avoid1",
+        "box": [
+            300,
+            440,
+            402,
+            544
+        ],
+        "coord": [
+            272,
+            201
+        ],
+        "file_path": "output_images/avoid1_180_1.5.jpg"
+    },
+    {
+        "name": "avoid1",
+        "box": [
+            300,
+            440,
+            402,
+            544
+        ],
+        "coord": [
+            272,
+            201
+        ],
+        "file_path": "output_images/avoid1_225_0.5.jpg"
+    },
+    {
+        "name": "avoid1",
+        "box": [
+            300,
+            440,
+            402,
+            544
+        ],
+        "coord": [
+            272,
+            201
+        ],
+        "file_path": "output_images/avoid1_225_1.0.jpg"
+    },
+    {
+        "name": "avoid1",
+        "box": [
+            300,
+            440,
+            402,
+            544
+        ],
+        "coord": [
+            272,
+            201
+        ],
+        "file_path": "output_images/avoid1_225_1.5.jpg"
+    },
+    {
+        "name": "avoid1",
+        "box": [
+            300,
+            440,
+            402,
+            544
+        ],
+        "coord": [
+            272,
+            201
+        ],
+        "file_path": "output_images/avoid1_270_0.5.jpg"
+    },
+    {
+        "name": "avoid1",
+        "box": [
+            300,
+            440,
+            402,
+            544
+        ],
+        "coord": [
+            272,
+            201
+        ],
+        "file_path": "output_images/avoid1_270_1.0.jpg"
+    },
+    {
+        "name": "avoid1",
+        "box": [
+            300,
+            440,
+            402,
+            544
+        ],
+        "coord": [
+            272,
+            201
+        ],
+        "file_path": "output_images/avoid1_270_1.5.jpg"
+    },
+    {
+        "name": "avoid1",
+        "box": [
+            300,
+            440,
+            402,
+            544
+        ],
+        "coord": [
+            272,
+            201
+        ],
+        "file_path": "output_images/avoid1_315_0.5.jpg"
+    },
+    {
+        "name": "avoid1",
+        "box": [
+            300,
+            440,
+            402,
+            544
+        ],
+        "coord": [
+            272,
+            201
+        ],
+        "file_path": "output_images/avoid1_315_1.0.jpg"
+    },
+    {
+        "name": "avoid1",
+        "box": [
+            300,
+            440,
+            402,
+            544
+        ],
+        "coord": [
+            272,
+            201
+        ],
+        "file_path": "output_images/avoid1_315_1.5.jpg"
+    },
+    {
+        "name": "avoid0",
+        "box": [
+            330,
+            440,
+            402,
+            540
+        ],
+        "coord": [
+            270,
+            201
+        ],
+        "file_path": "output_images/avoid0_0_0.5.jpg"
+    },
+    {
+        "name": "avoid0",
+        "box": [
+            330,
+            440,
+            402,
+            540
+        ],
+        "coord": [
+            270,
+            201
+        ],
+        "file_path": "output_images/avoid0_0_1.0.jpg"
+    },
+    {
+        "name": "avoid0",
+        "box": [
+            330,
+            440,
+            402,
+            540
+        ],
+        "coord": [
+            270,
+            201
+        ],
+        "file_path": "output_images/avoid0_0_1.5.jpg"
+    },
+    {
+        "name": "avoid0",
+        "box": [
+            330,
+            440,
+            402,
+            540
+        ],
+        "coord": [
+            270,
+            201
+        ],
+        "file_path": "output_images/avoid0_45_0.5.jpg"
+    },
+    {
+        "name": "avoid0",
+        "box": [
+            330,
+            440,
+            402,
+            540
+        ],
+        "coord": [
+            270,
+            201
+        ],
+        "file_path": "output_images/avoid0_45_1.0.jpg"
+    },
+    {
+        "name": "avoid0",
+        "box": [
+            330,
+            440,
+            402,
+            540
+        ],
+        "coord": [
+            270,
+            201
+        ],
+        "file_path": "output_images/avoid0_45_1.5.jpg"
+    },
+    {
+        "name": "avoid0",
+        "box": [
+            330,
+            440,
+            402,
+            540
+        ],
+        "coord": [
+            270,
+            201
+        ],
+        "file_path": "output_images/avoid0_90_0.5.jpg"
+    },
+    {
+        "name": "avoid0",
+        "box": [
+            330,
+            440,
+            402,
+            540
+        ],
+        "coord": [
+            270,
+            201
+        ],
+        "file_path": "output_images/avoid0_90_1.0.jpg"
+    },
+    {
+        "name": "avoid0",
+        "box": [
+            330,
+            440,
+            402,
+            540
+        ],
+        "coord": [
+            270,
+            201
+        ],
+        "file_path": "output_images/avoid0_90_1.5.jpg"
+    },
+    {
+        "name": "avoid0",
+        "box": [
+            330,
+            440,
+            402,
+            540
+        ],
+        "coord": [
+            270,
+            201
+        ],
+        "file_path": "output_images/avoid0_135_0.5.jpg"
+    },
+    {
+        "name": "avoid0",
+        "box": [
+            330,
+            440,
+            402,
+            540
+        ],
+        "coord": [
+            270,
+            201
+        ],
+        "file_path": "output_images/avoid0_135_1.0.jpg"
+    },
+    {
+        "name": "avoid0",
+        "box": [
+            330,
+            440,
+            402,
+            540
+        ],
+        "coord": [
+            270,
+            201
+        ],
+        "file_path": "output_images/avoid0_135_1.5.jpg"
+    },
+    {
+        "name": "avoid0",
+        "box": [
+            330,
+            440,
+            402,
+            540
+        ],
+        "coord": [
+            270,
+            201
+        ],
+        "file_path": "output_images/avoid0_180_0.5.jpg"
+    },
+    {
+        "name": "avoid0",
+        "box": [
+            330,
+            440,
+            402,
+            540
+        ],
+        "coord": [
+            270,
+            201
+        ],
+        "file_path": "output_images/avoid0_180_1.0.jpg"
+    },
+    {
+        "name": "avoid0",
+        "box": [
+            330,
+            440,
+            402,
+            540
+        ],
+        "coord": [
+            270,
+            201
+        ],
+        "file_path": "output_images/avoid0_180_1.5.jpg"
+    },
+    {
+        "name": "avoid0",
+        "box": [
+            330,
+            440,
+            402,
+            540
+        ],
+        "coord": [
+            270,
+            201
+        ],
+        "file_path": "output_images/avoid0_225_0.5.jpg"
+    },
+    {
+        "name": "avoid0",
+        "box": [
+            330,
+            440,
+            402,
+            540
+        ],
+        "coord": [
+            270,
+            201
+        ],
+        "file_path": "output_images/avoid0_225_1.0.jpg"
+    },
+    {
+        "name": "avoid0",
+        "box": [
+            330,
+            440,
+            402,
+            540
+        ],
+        "coord": [
+            270,
+            201
+        ],
+        "file_path": "output_images/avoid0_225_1.5.jpg"
+    },
+    {
+        "name": "avoid0",
+        "box": [
+            330,
+            440,
+            402,
+            540
+        ],
+        "coord": [
+            270,
+            201
+        ],
+        "file_path": "output_images/avoid0_270_0.5.jpg"
+    },
+    {
+        "name": "avoid0",
+        "box": [
+            330,
+            440,
+            402,
+            540
+        ],
+        "coord": [
+            270,
+            201
+        ],
+        "file_path": "output_images/avoid0_270_1.0.jpg"
+    },
+    {
+        "name": "avoid0",
+        "box": [
+            330,
+            440,
+            402,
+            540
+        ],
+        "coord": [
+            270,
+            201
+        ],
+        "file_path": "output_images/avoid0_270_1.5.jpg"
+    },
+    {
+        "name": "avoid0",
+        "box": [
+            330,
+            440,
+            402,
+            540
+        ],
+        "coord": [
+            270,
+            201
+        ],
+        "file_path": "output_images/avoid0_315_0.5.jpg"
+    },
+    {
+        "name": "avoid0",
+        "box": [
+            330,
+            440,
+            402,
+            540
+        ],
+        "coord": [
+            270,
+            201
+        ],
+        "file_path": "output_images/avoid0_315_1.0.jpg"
+    },
+    {
+        "name": "avoid0",
+        "box": [
+            330,
+            440,
+            402,
+            540
+        ],
+        "coord": [
+            270,
+            201
+        ],
+        "file_path": "output_images/avoid0_315_1.5.jpg"
+    },
+    {
+        "name": "playr",
+        "box": [
+            210,
+            290,
+            310,
+            390
+        ],
+        "coord": [
+            195,
+            155
+        ],
+        "file_path": "output_images/playr_0_0.5.jpg"
+    },
+    {
+        "name": "playr",
+        "box": [
+            210,
+            290,
+            310,
+            390
+        ],
+        "coord": [
+            195,
+            155
+        ],
+        "file_path": "output_images/playr_0_1.0.jpg"
+    },
+    {
+        "name": "playr",
+        "box": [
+            210,
+            290,
+            310,
+            390
+        ],
+        "coord": [
+            195,
+            155
+        ],
+        "file_path": "output_images/playr_0_1.5.jpg"
+    },
+    {
+        "name": "playr",
+        "box": [
+            210,
+            290,
+            310,
+            390
+        ],
+        "coord": [
+            195,
+            155
+        ],
+        "file_path": "output_images/playr_45_0.5.jpg"
+    },
+    {
+        "name": "playr",
+        "box": [
+            210,
+            290,
+            310,
+            390
+        ],
+        "coord": [
+            195,
+            155
+        ],
+        "file_path": "output_images/playr_45_1.0.jpg"
+    },
+    {
+        "name": "playr",
+        "box": [
+            210,
+            290,
+            310,
+            390
+        ],
+        "coord": [
+            195,
+            155
+        ],
+        "file_path": "output_images/playr_45_1.5.jpg"
+    },
+    {
+        "name": "playr",
+        "box": [
+            210,
+            290,
+            310,
+            390
+        ],
+        "coord": [
+            195,
+            155
+        ],
+        "file_path": "output_images/playr_90_0.5.jpg"
+    },
+    {
+        "name": "playr",
+        "box": [
+            210,
+            290,
+            310,
+            390
+        ],
+        "coord": [
+            195,
+            155
+        ],
+        "file_path": "output_images/playr_90_1.0.jpg"
+    },
+    {
+        "name": "playr",
+        "box": [
+            210,
+            290,
+            310,
+            390
+        ],
+        "coord": [
+            195,
+            155
+        ],
+        "file_path": "output_images/playr_90_1.5.jpg"
+    },
+    {
+        "name": "playr",
+        "box": [
+            210,
+            290,
+            310,
+            390
+        ],
+        "coord": [
+            195,
+            155
+        ],
+        "file_path": "output_images/playr_135_0.5.jpg"
+    },
+    {
+        "name": "playr",
+        "box": [
+            210,
+            290,
+            310,
+            390
+        ],
+        "coord": [
+            195,
+            155
+        ],
+        "file_path": "output_images/playr_135_1.0.jpg"
+    },
+    {
+        "name": "playr",
+        "box": [
+            210,
+            290,
+            310,
+            390
+        ],
+        "coord": [
+            195,
+            155
+        ],
+        "file_path": "output_images/playr_135_1.5.jpg"
+    },
+    {
+        "name": "playr",
+        "box": [
+            210,
+            290,
+            310,
+            390
+        ],
+        "coord": [
+            195,
+            155
+        ],
+        "file_path": "output_images/playr_180_0.5.jpg"
+    },
+    {
+        "name": "playr",
+        "box": [
+            210,
+            290,
+            310,
+            390
+        ],
+        "coord": [
+            195,
+            155
+        ],
+        "file_path": "output_images/playr_180_1.0.jpg"
+    },
+    {
+        "name": "playr",
+        "box": [
+            210,
+            290,
+            310,
+            390
+        ],
+        "coord": [
+            195,
+            155
+        ],
+        "file_path": "output_images/playr_180_1.5.jpg"
+    },
+    {
+        "name": "playr",
+        "box": [
+            210,
+            290,
+            310,
+            390
+        ],
+        "coord": [
+            195,
+            155
+        ],
+        "file_path": "output_images/playr_225_0.5.jpg"
+    },
+    {
+        "name": "playr",
+        "box": [
+            210,
+            290,
+            310,
+            390
+        ],
+        "coord": [
+            195,
+            155
+        ],
+        "file_path": "output_images/playr_225_1.0.jpg"
+    },
+    {
+        "name": "playr",
+        "box": [
+            210,
+            290,
+            310,
+            390
+        ],
+        "coord": [
+            195,
+            155
+        ],
+        "file_path": "output_images/playr_225_1.5.jpg"
+    },
+    {
+        "name": "playr",
+        "box": [
+            210,
+            290,
+            310,
+            390
+        ],
+        "coord": [
+            195,
+            155
+        ],
+        "file_path": "output_images/playr_270_0.5.jpg"
+    },
+    {
+        "name": "playr",
+        "box": [
+            210,
+            290,
+            310,
+            390
+        ],
+        "coord": [
+            195,
+            155
+        ],
+        "file_path": "output_images/playr_270_1.0.jpg"
+    },
+    {
+        "name": "playr",
+        "box": [
+            210,
+            290,
+            310,
+            390
+        ],
+        "coord": [
+            195,
+            155
+        ],
+        "file_path": "output_images/playr_270_1.5.jpg"
+    },
+    {
+        "name": "playr",
+        "box": [
+            210,
+            290,
+            310,
+            390
+        ],
+        "coord": [
+            195,
+            155
+        ],
+        "file_path": "output_images/playr_315_0.5.jpg"
+    },
+    {
+        "name": "playr",
+        "box": [
+            210,
+            290,
+            310,
+            390
+        ],
+        "coord": [
+            195,
+            155
+        ],
+        "file_path": "output_images/playr_315_1.0.jpg"
+    },
+    {
+        "name": "playr",
+        "box": [
+            210,
+            290,
+            310,
+            390
+        ],
+        "coord": [
+            195,
+            155
+        ],
+        "file_path": "output_images/playr_315_1.5.jpg"
+    },
+    {
+        "name": "playp",
+        "box": [
+            230,
+            290,
+            332,
+            388
+        ],
+        "coord": [
+            194,
+            166
+        ],
+        "file_path": "output_images/playp_0_0.5.jpg"
+    },
+    {
+        "name": "playp",
+        "box": [
+            230,
+            290,
+            332,
+            388
+        ],
+        "coord": [
+            194,
+            166
+        ],
+        "file_path": "output_images/playp_0_1.0.jpg"
+    },
+    {
+        "name": "playp",
+        "box": [
+            230,
+            290,
+            332,
+            388
+        ],
+        "coord": [
+            194,
+            166
+        ],
+        "file_path": "output_images/playp_0_1.5.jpg"
+    },
+    {
+        "name": "playp",
+        "box": [
+            230,
+            290,
+            332,
+            388
+        ],
+        "coord": [
+            194,
+            166
+        ],
+        "file_path": "output_images/playp_45_0.5.jpg"
+    },
+    {
+        "name": "playp",
+        "box": [
+            230,
+            290,
+            332,
+            388
+        ],
+        "coord": [
+            194,
+            166
+        ],
+        "file_path": "output_images/playp_45_1.0.jpg"
+    },
+    {
+        "name": "playp",
+        "box": [
+            230,
+            290,
+            332,
+            388
+        ],
+        "coord": [
+            194,
+            166
+        ],
+        "file_path": "output_images/playp_45_1.5.jpg"
+    },
+    {
+        "name": "playp",
+        "box": [
+            230,
+            290,
+            332,
+            388
+        ],
+        "coord": [
+            194,
+            166
+        ],
+        "file_path": "output_images/playp_90_0.5.jpg"
+    },
+    {
+        "name": "playp",
+        "box": [
+            230,
+            290,
+            332,
+            388
+        ],
+        "coord": [
+            194,
+            166
+        ],
+        "file_path": "output_images/playp_90_1.0.jpg"
+    },
+    {
+        "name": "playp",
+        "box": [
+            230,
+            290,
+            332,
+            388
+        ],
+        "coord": [
+            194,
+            166
+        ],
+        "file_path": "output_images/playp_90_1.5.jpg"
+    },
+    {
+        "name": "playp",
+        "box": [
+            230,
+            290,
+            332,
+            388
+        ],
+        "coord": [
+            194,
+            166
+        ],
+        "file_path": "output_images/playp_135_0.5.jpg"
+    },
+    {
+        "name": "playp",
+        "box": [
+            230,
+            290,
+            332,
+            388
+        ],
+        "coord": [
+            194,
+            166
+        ],
+        "file_path": "output_images/playp_135_1.0.jpg"
+    },
+    {
+        "name": "playp",
+        "box": [
+            230,
+            290,
+            332,
+            388
+        ],
+        "coord": [
+            194,
+            166
+        ],
+        "file_path": "output_images/playp_135_1.5.jpg"
+    },
+    {
+        "name": "playp",
+        "box": [
+            230,
+            290,
+            332,
+            388
+        ],
+        "coord": [
+            194,
+            166
+        ],
+        "file_path": "output_images/playp_180_0.5.jpg"
+    },
+    {
+        "name": "playp",
+        "box": [
+            230,
+            290,
+            332,
+            388
+        ],
+        "coord": [
+            194,
+            166
+        ],
+        "file_path": "output_images/playp_180_1.0.jpg"
+    },
+    {
+        "name": "playp",
+        "box": [
+            230,
+            290,
+            332,
+            388
+        ],
+        "coord": [
+            194,
+            166
+        ],
+        "file_path": "output_images/playp_180_1.5.jpg"
+    },
+    {
+        "name": "playp",
+        "box": [
+            230,
+            290,
+            332,
+            388
+        ],
+        "coord": [
+            194,
+            166
+        ],
+        "file_path": "output_images/playp_225_0.5.jpg"
+    },
+    {
+        "name": "playp",
+        "box": [
+            230,
+            290,
+            332,
+            388
+        ],
+        "coord": [
+            194,
+            166
+        ],
+        "file_path": "output_images/playp_225_1.0.jpg"
+    },
+    {
+        "name": "playp",
+        "box": [
+            230,
+            290,
+            332,
+            388
+        ],
+        "coord": [
+            194,
+            166
+        ],
+        "file_path": "output_images/playp_225_1.5.jpg"
+    },
+    {
+        "name": "playp",
+        "box": [
+            230,
+            290,
+            332,
+            388
+        ],
+        "coord": [
+            194,
+            166
+        ],
+        "file_path": "output_images/playp_270_0.5.jpg"
+    },
+    {
+        "name": "playp",
+        "box": [
+            230,
+            290,
+            332,
+            388
+        ],
+        "coord": [
+            194,
+            166
+        ],
+        "file_path": "output_images/playp_270_1.0.jpg"
+    },
+    {
+        "name": "playp",
+        "box": [
+            230,
+            290,
+            332,
+            388
+        ],
+        "coord": [
+            194,
+            166
+        ],
+        "file_path": "output_images/playp_270_1.5.jpg"
+    },
+    {
+        "name": "playp",
+        "box": [
+            230,
+            290,
+            332,
+            388
+        ],
+        "coord": [
+            194,
+            166
+        ],
+        "file_path": "output_images/playp_315_0.5.jpg"
+    },
+    {
+        "name": "playp",
+        "box": [
+            230,
+            290,
+            332,
+            388
+        ],
+        "coord": [
+            194,
+            166
+        ],
+        "file_path": "output_images/playp_315_1.0.jpg"
+    },
+    {
+        "name": "playp",
+        "box": [
+            230,
+            290,
+            332,
+            388
+        ],
+        "coord": [
+            194,
+            166
+        ],
+        "file_path": "output_images/playp_315_1.5.jpg"
+    },
+    {
+        "name": "bar",
+        "box": [
+            260,
+            285,
+            312,
+            659
+        ],
+        "coord": [
+            329,
+            156
+        ],
+        "file_path": "output_images/bar_0_0.5.jpg"
+    },
+    {
+        "name": "bar",
+        "box": [
+            260,
+            285,
+            312,
+            659
+        ],
+        "coord": [
+            329,
+            156
+        ],
+        "file_path": "output_images/bar_0_1.0.jpg"
+    },
+    {
+        "name": "bar",
+        "box": [
+            260,
+            285,
+            312,
+            659
+        ],
+        "coord": [
+            329,
+            156
+        ],
+        "file_path": "output_images/bar_0_1.5.jpg"
+    },
+    {
+        "name": "bar",
+        "box": [
+            260,
+            285,
+            312,
+            659
+        ],
+        "coord": [
+            329,
+            156
+        ],
+        "file_path": "output_images/bar_45_0.5.jpg"
+    },
+    {
+        "name": "bar",
+        "box": [
+            260,
+            285,
+            312,
+            659
+        ],
+        "coord": [
+            329,
+            156
+        ],
+        "file_path": "output_images/bar_45_1.0.jpg"
+    },
+    {
+        "name": "bar",
+        "box": [
+            260,
+            285,
+            312,
+            659
+        ],
+        "coord": [
+            329,
+            156
+        ],
+        "file_path": "output_images/bar_45_1.5.jpg"
+    },
+    {
+        "name": "bar",
+        "box": [
+            260,
+            285,
+            312,
+            659
+        ],
+        "coord": [
+            329,
+            156
+        ],
+        "file_path": "output_images/bar_90_0.5.jpg"
+    },
+    {
+        "name": "bar",
+        "box": [
+            260,
+            285,
+            312,
+            659
+        ],
+        "coord": [
+            329,
+            156
+        ],
+        "file_path": "output_images/bar_90_1.0.jpg"
+    },
+    {
+        "name": "bar",
+        "box": [
+            260,
+            285,
+            312,
+            659
+        ],
+        "coord": [
+            329,
+            156
+        ],
+        "file_path": "output_images/bar_90_1.5.jpg"
+    },
+    {
+        "name": "bar",
+        "box": [
+            260,
+            285,
+            312,
+            659
+        ],
+        "coord": [
+            329,
+            156
+        ],
+        "file_path": "output_images/bar_135_0.5.jpg"
+    },
+    {
+        "name": "bar",
+        "box": [
+            260,
+            285,
+            312,
+            659
+        ],
+        "coord": [
+            329,
+            156
+        ],
+        "file_path": "output_images/bar_135_1.0.jpg"
+    },
+    {
+        "name": "bar",
+        "box": [
+            260,
+            285,
+            312,
+            659
+        ],
+        "coord": [
+            329,
+            156
+        ],
+        "file_path": "output_images/bar_135_1.5.jpg"
+    },
+    {
+        "name": "bar",
+        "box": [
+            260,
+            285,
+            312,
+            659
+        ],
+        "coord": [
+            329,
+            156
+        ],
+        "file_path": "output_images/bar_180_0.5.jpg"
+    },
+    {
+        "name": "bar",
+        "box": [
+            260,
+            285,
+            312,
+            659
+        ],
+        "coord": [
+            329,
+            156
+        ],
+        "file_path": "output_images/bar_180_1.0.jpg"
+    },
+    {
+        "name": "bar",
+        "box": [
+            260,
+            285,
+            312,
+            659
+        ],
+        "coord": [
+            329,
+            156
+        ],
+        "file_path": "output_images/bar_180_1.5.jpg"
+    },
+    {
+        "name": "bar",
+        "box": [
+            260,
+            285,
+            312,
+            659
+        ],
+        "coord": [
+            329,
+            156
+        ],
+        "file_path": "output_images/bar_225_0.5.jpg"
+    },
+    {
+        "name": "bar",
+        "box": [
+            260,
+            285,
+            312,
+            659
+        ],
+        "coord": [
+            329,
+            156
+        ],
+        "file_path": "output_images/bar_225_1.0.jpg"
+    },
+    {
+        "name": "bar",
+        "box": [
+            260,
+            285,
+            312,
+            659
+        ],
+        "coord": [
+            329,
+            156
+        ],
+        "file_path": "output_images/bar_225_1.5.jpg"
+    },
+    {
+        "name": "bar",
+        "box": [
+            260,
+            285,
+            312,
+            659
+        ],
+        "coord": [
+            329,
+            156
+        ],
+        "file_path": "output_images/bar_270_0.5.jpg"
+    },
+    {
+        "name": "bar",
+        "box": [
+            260,
+            285,
+            312,
+            659
+        ],
+        "coord": [
+            329,
+            156
+        ],
+        "file_path": "output_images/bar_270_1.0.jpg"
+    },
+    {
+        "name": "bar",
+        "box": [
+            260,
+            285,
+            312,
+            659
+        ],
+        "coord": [
+            329,
+            156
+        ],
+        "file_path": "output_images/bar_270_1.5.jpg"
+    },
+    {
+        "name": "bar",
+        "box": [
+            260,
+            285,
+            312,
+            659
+        ],
+        "coord": [
+            329,
+            156
+        ],
+        "file_path": "output_images/bar_315_0.5.jpg"
+    },
+    {
+        "name": "bar",
+        "box": [
+            260,
+            285,
+            312,
+            659
+        ],
+        "coord": [
+            329,
+            156
+        ],
+        "file_path": "output_images/bar_315_1.0.jpg"
+    },
+    {
+        "name": "bar",
+        "box": [
+            260,
+            285,
+            312,
+            659
+        ],
+        "coord": [
+            329,
+            156
+        ],
+        "file_path": "output_images/bar_315_1.5.jpg"
+    },
+    {
+        "name": "avoid2",
+        "box": [
+            250,
+            325,
+            436,
+            427
+        ],
+        "coord": [
+            213,
+            218
+        ],
+        "file_path": "output_images/avoid2_0_0.5.jpg"
+    },
+    {
+        "name": "avoid2",
+        "box": [
+            250,
+            325,
+            436,
+            427
+        ],
+        "coord": [
+            213,
+            218
+        ],
+        "file_path": "output_images/avoid2_0_1.0.jpg"
+    },
+    {
+        "name": "avoid2",
+        "box": [
+            250,
+            325,
+            436,
+            427
+        ],
+        "coord": [
+            213,
+            218
+        ],
+        "file_path": "output_images/avoid2_0_1.5.jpg"
+    },
+    {
+        "name": "avoid2",
+        "box": [
+            250,
+            325,
+            436,
+            427
+        ],
+        "coord": [
+            213,
+            218
+        ],
+        "file_path": "output_images/avoid2_45_0.5.jpg"
+    },
+    {
+        "name": "avoid2",
+        "box": [
+            250,
+            325,
+            436,
+            427
+        ],
+        "coord": [
+            213,
+            218
+        ],
+        "file_path": "output_images/avoid2_45_1.0.jpg"
+    },
+    {
+        "name": "avoid2",
+        "box": [
+            250,
+            325,
+            436,
+            427
+        ],
+        "coord": [
+            213,
+            218
+        ],
+        "file_path": "output_images/avoid2_45_1.5.jpg"
+    },
+    {
+        "name": "avoid2",
+        "box": [
+            250,
+            325,
+            436,
+            427
+        ],
+        "coord": [
+            213,
+            218
+        ],
+        "file_path": "output_images/avoid2_90_0.5.jpg"
+    },
+    {
+        "name": "avoid2",
+        "box": [
+            250,
+            325,
+            436,
+            427
+        ],
+        "coord": [
+            213,
+            218
+        ],
+        "file_path": "output_images/avoid2_90_1.0.jpg"
+    },
+    {
+        "name": "avoid2",
+        "box": [
+            250,
+            325,
+            436,
+            427
+        ],
+        "coord": [
+            213,
+            218
+        ],
+        "file_path": "output_images/avoid2_90_1.5.jpg"
+    },
+    {
+        "name": "avoid2",
+        "box": [
+            250,
+            325,
+            436,
+            427
+        ],
+        "coord": [
+            213,
+            218
+        ],
+        "file_path": "output_images/avoid2_135_0.5.jpg"
+    },
+    {
+        "name": "avoid2",
+        "box": [
+            250,
+            325,
+            436,
+            427
+        ],
+        "coord": [
+            213,
+            218
+        ],
+        "file_path": "output_images/avoid2_135_1.0.jpg"
+    },
+    {
+        "name": "avoid2",
+        "box": [
+            250,
+            325,
+            436,
+            427
+        ],
+        "coord": [
+            213,
+            218
+        ],
+        "file_path": "output_images/avoid2_135_1.5.jpg"
+    },
+    {
+        "name": "avoid2",
+        "box": [
+            250,
+            325,
+            436,
+            427
+        ],
+        "coord": [
+            213,
+            218
+        ],
+        "file_path": "output_images/avoid2_180_0.5.jpg"
+    },
+    {
+        "name": "avoid2",
+        "box": [
+            250,
+            325,
+            436,
+            427
+        ],
+        "coord": [
+            213,
+            218
+        ],
+        "file_path": "output_images/avoid2_180_1.0.jpg"
+    },
+    {
+        "name": "avoid2",
+        "box": [
+            250,
+            325,
+            436,
+            427
+        ],
+        "coord": [
+            213,
+            218
+        ],
+        "file_path": "output_images/avoid2_180_1.5.jpg"
+    },
+    {
+        "name": "avoid2",
+        "box": [
+            250,
+            325,
+            436,
+            427
+        ],
+        "coord": [
+            213,
+            218
+        ],
+        "file_path": "output_images/avoid2_225_0.5.jpg"
+    },
+    {
+        "name": "avoid2",
+        "box": [
+            250,
+            325,
+            436,
+            427
+        ],
+        "coord": [
+            213,
+            218
+        ],
+        "file_path": "output_images/avoid2_225_1.0.jpg"
+    },
+    {
+        "name": "avoid2",
+        "box": [
+            250,
+            325,
+            436,
+            427
+        ],
+        "coord": [
+            213,
+            218
+        ],
+        "file_path": "output_images/avoid2_225_1.5.jpg"
+    },
+    {
+        "name": "avoid2",
+        "box": [
+            250,
+            325,
+            436,
+            427
+        ],
+        "coord": [
+            213,
+            218
+        ],
+        "file_path": "output_images/avoid2_270_0.5.jpg"
+    },
+    {
+        "name": "avoid2",
+        "box": [
+            250,
+            325,
+            436,
+            427
+        ],
+        "coord": [
+            213,
+            218
+        ],
+        "file_path": "output_images/avoid2_270_1.0.jpg"
+    },
+    {
+        "name": "avoid2",
+        "box": [
+            250,
+            325,
+            436,
+            427
+        ],
+        "coord": [
+            213,
+            218
+        ],
+        "file_path": "output_images/avoid2_270_1.5.jpg"
+    },
+    {
+        "name": "avoid2",
+        "box": [
+            250,
+            325,
+            436,
+            427
+        ],
+        "coord": [
+            213,
+            218
+        ],
+        "file_path": "output_images/avoid2_315_0.5.jpg"
+    },
+    {
+        "name": "avoid2",
+        "box": [
+            250,
+            325,
+            436,
+            427
+        ],
+        "coord": [
+            213,
+            218
+        ],
+        "file_path": "output_images/avoid2_315_1.0.jpg"
+    },
+    {
+        "name": "avoid2",
+        "box": [
+            250,
+            325,
+            436,
+            427
+        ],
+        "coord": [
+            213,
+            218
+        ],
+        "file_path": "output_images/avoid2_315_1.5.jpg"
+    }
+]
