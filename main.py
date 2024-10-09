@@ -99,7 +99,7 @@ class mainWindow(QtWidgets.QMainWindow):
         self.process_list.currentIndexChanged.connect(self.update_process_list)                
         self.handler.process_name = self.process_list.currentText()
         
-        self.preset_combo.addItems([f"프리셋 {i}" for i in range(0, 10)])  # 예시 프리셋 추가
+        self.preset_combo.addItems([f"pre-set {i}" for i in range(0, 10)])  # 예시 프리셋 추가
         self.preset_combo.currentIndexChanged.connect(self.update_preset)                
         self.log_text.setReadOnly(True)
 
@@ -140,7 +140,7 @@ class mainWindow(QtWidgets.QMainWindow):
             # actions = [self.action_sequence.item(i) for i in range(self.action_sequence.count())]
             items = [item.data(Qt.UserRole) for item in self.action_sequence.findItems("", Qt.MatchContains)]
             self.repeater.receive_items(items)
-            self.log_text.append("루틴이 시작되었습니다.")
+            self.log_text.append("Start The Routine")
             self.repeater.start()
             
             # 윈도우 창 최소화            
@@ -149,7 +149,7 @@ class mainWindow(QtWidgets.QMainWindow):
     def stop_routine(self):
         if self.repeater is not None and self.repeater.isRunning():
             self.repeater.stop()
-            self.log_text.append("루틴이 정지되었습니다.")
+            self.log_text.append("Stop The Routine")
             self.repeater.wait()
             self.showNormal()
 
@@ -205,7 +205,7 @@ class mainWindow(QtWidgets.QMainWindow):
         
         # folder_dir = 'screen/UI'
         if len(self.gui_img_files) < 1:
-            self.progress_bar.setFormat(f"경로 :'{self.gui_folder.text()}' 내에 이미지 파일이 없습니다.")
+            self.progress_bar.setFormat(f"Path :'{self.gui_folder.text()}' 내에 이미지 파일이 없습니다.")
             return
         
         # 윈도우 화면 전체 캡쳐
@@ -309,7 +309,7 @@ class mainWindow(QtWidgets.QMainWindow):
         q_img = QImage(frame_bytes, w, h, bytes_per_line, QImage.Format_RGB888)
 
         # Re-scale QImage to fit layout
-        resized_img = q_img.scaled(width,height)
+        resized_img = q_img.scaled(width,height,Qt.KeepAspectRatio)
         return QPixmap.fromImage(resized_img)
     
     def confirm_running_process(self): ##
@@ -318,7 +318,7 @@ class mainWindow(QtWidgets.QMainWindow):
         for proc in proc_lst:
             self.process_list.addItem(f"{proc['name']}")
         
-        msg = f"실행중인 프로세스를 다시 확인합니다."
+        msg = f"Re-check running processes"
         self.log_text.append(msg)    
         # cur_proc = self.process_list.currentText()
         # # msg = self.handler.connect_application_by_handler()
@@ -333,14 +333,14 @@ class mainWindow(QtWidgets.QMainWindow):
             item = QtWidgets.QListWidgetItem(f"{dialog.interval_line.text()} 초 대기")
             item.setData(Qt.UserRole, [ItemType.DELAY, [dialog.interval_line.text()]])
 
-            self.log_text.append(f"대기Action 추가 : {item.data(Qt.UserRole)}")
+            self.log_text.append(f"Add Action : {item.data(Qt.UserRole)}")
             self.action_sequence.addItem(item)
             
     def delete_cur_action(self):
         selectedRow = self.action_sequence.currentRow()
         if selectedRow != -1:
             selectedItem = self.action_sequence.item(selectedRow)
-            self.log_text.append(f"제거 : {selectedItem.text()}")
+            self.log_text.append(f"Remove Action : {selectedItem.text()}")
             self.action_sequence.takeItem(selectedRow)
     
     def add_actions(self):
@@ -350,13 +350,13 @@ class mainWindow(QtWidgets.QMainWindow):
 
         if result == QtWidgets.QDialog.Accepted:
             if dialog.input_toggle == 0:
-                item = QtWidgets.QListWidgetItem(f"좌표 클릭 ({dialog.mousePos[0]}, {dialog.mousePos[1]})")
+                item = QtWidgets.QListWidgetItem(f"Click Coordinate ({dialog.mousePos[0]}, {dialog.mousePos[1]})")
                 item.setData(Qt.UserRole, [ItemType.CLICK, dialog.mousePos])
-                self.log_text.append(f"클릭Action 추가 : ({item.data(Qt.UserRole)})")
+                self.log_text.append(f"Add Coordinate & Click : ({item.data(Qt.UserRole)})")
             elif dialog.input_toggle == 1:
-                item = QtWidgets.QListWidgetItem(f"키 입력 ({dialog.input_key.text()})")
+                item = QtWidgets.QListWidgetItem(f"Input Key ({dialog.input_key.text()})")
                 item.setData(Qt.UserRole, [ItemType.TYPING, [dialog.input_key.text()]])
-                self.log_text.append(f"키Action 추가 : ({item.data(Qt.UserRole)})")
+                self.log_text.append(f"Add Key : ({item.data(Qt.UserRole)})")
             self.action_sequence.addItem(item)
         
     def add_image(self):
@@ -365,10 +365,10 @@ class mainWindow(QtWidgets.QMainWindow):
         item = None
 
         if result == QtWidgets.QDialog.Accepted:
-            item = QtWidgets.QListWidgetItem(f"이미지 클릭 {os.path.basename(dialog._imgPath)}")
+            item = QtWidgets.QListWidgetItem(f"Select Image {os.path.basename(dialog._imgPath)}")
             item.setData(Qt.UserRole, [ItemType.REMATCH, [dialog._imgPath, dialog.confidence.value()]])
 
-            self.log_text.append(f"이미지클릭Action 추가{os.path.basename(dialog._imgPath)}, 유사도:{dialog.confidence.value()}")
+            self.log_text.append(f"Add Image{os.path.basename(dialog._imgPath)}, 유사도:{dialog.confidence.value()}")
             self.action_sequence.addItem(item)
 
     # Update Section
@@ -379,7 +379,7 @@ class mainWindow(QtWidgets.QMainWindow):
         
         for action in c_list:
             if action[0] == 0:
-                self.action_sequence.addItem(f"클릭 (x,y : {action[1][0]}, {action[1][1]})")
+                self.action_sequence.addItem(f"Click (x,y : {action[1][0]}, {action[1][1]})")
                 
     def update_process_list(self):
         msg = ""
@@ -418,7 +418,7 @@ class mainWindow(QtWidgets.QMainWindow):
             gui_dic[name] = ( score , mc_loc )
             self.gui_matchinfo.append(gui_dic)
       
-            msg = f"파일명 : {template_tuple[0]}, 좌표 : ( {mc_loc[0]} , {mc_loc[1]} )"
+            msg = f"File : {template_tuple[0]}, Coord : ( {mc_loc[0]} , {mc_loc[1]} )"
             # print(msg)
             self.log_text.append(msg)
     

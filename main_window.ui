@@ -98,21 +98,21 @@
            <item>
             <widget class="QPushButton" name="name_button">
              <property name="text">
-              <string>이름변경</string>
+              <string>Rename</string>
              </property>
             </widget>
            </item>
            <item>
             <widget class="QPushButton" name="save_button">
              <property name="text">
-              <string>저장</string>
+              <string>Save</string>
              </property>
             </widget>
            </item>
            <item>
             <widget class="QPushButton" name="load_button">
              <property name="text">
-              <string>불러오기</string>
+              <string>Load</string>
              </property>
             </widget>
            </item>
@@ -175,28 +175,28 @@
              <item row="0" column="1">
               <widget class="QPushButton" name="pushButton_1">
                <property name="text">
-                <string>이미지 클릭 추가</string>
+                <string>Add Image</string>
                </property>
               </widget>
              </item>
              <item row="0" column="3">
               <widget class="QPushButton" name="pushButton_3">
                <property name="text">
-                <string>전투 추가</string>
+                <string>Add Action</string>
                </property>
               </widget>
              </item>
              <item row="2" column="1">
               <widget class="QPushButton" name="pushButton_5">
                <property name="text">
-                <string>동작 수정</string>
+                <string>Modify Item</string>
                </property>
               </widget>
              </item>
              <item row="2" column="2">
               <widget class="QPushButton" name="pushButton_6">
                <property name="text">
-                <string>루틴 시작</string>
+                <string>Start Routine</string>
                </property>
               </widget>
              </item>
@@ -206,28 +206,28 @@
                 <bool>true</bool>
                </property>
                <property name="text">
-                <string>동작추가</string>
+                <string>Add Action</string>
                </property>
               </widget>
              </item>
              <item row="2" column="3">
               <widget class="QPushButton" name="pushButton_7">
                <property name="text">
-                <string>루틴 정지</string>
+                <string>Stop Routine</string>
                </property>
               </widget>
              </item>
              <item row="2" column="0">
               <widget class="QPushButton" name="pushButton_4">
                <property name="text">
-                <string>대기 시간 추가</string>
+                <string>Set Interval</string>
                </property>
               </widget>
              </item>
              <item row="0" column="2">
               <widget class="QPushButton" name="pushButton_2">
                <property name="text">
-                <string>선택 삭제</string>
+                <string>Remove Item</string>
                </property>
               </widget>
              </item>
@@ -270,7 +270,7 @@
                   </sizepolicy>
                  </property>
                  <property name="text">
-                  <string>프로세스명 :</string>
+                  <string>Process</string>
                  </property>
                 </widget>
                </item>
@@ -290,7 +290,7 @@
                <item>
                 <widget class="QPushButton" name="confirm_process">
                  <property name="text">
-                  <string>확인</string>
+                  <string>Confirm</string>
                  </property>
                  <property name="checkable">
                   <bool>false</bool>
@@ -306,7 +306,7 @@
                <item>
                 <widget class="QPushButton" name="auto_play">
                  <property name="text">
-                  <string>자동시작</string>
+                  <string>Start-auto</string>
                  </property>
                 </widget>
                </item>
@@ -342,7 +342,7 @@
                   <bool>true</bool>
                  </property>
                  <property name="text">
-                  <string>GUI 찾기</string>
+                  <string>Detect GUI</string>
                  </property>
                  <property name="checkable">
                   <bool>false</bool>
@@ -352,7 +352,7 @@
                <item>
                 <widget class="QPushButton" name="ocr_search">
                  <property name="text">
-                  <string>Text 찾기</string>
+                  <string>Detect Text</string>
                  </property>
                 </widget>
                </item>
@@ -363,7 +363,7 @@
            <item>
             <widget class="QLabel" name="gui_result">
              <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
