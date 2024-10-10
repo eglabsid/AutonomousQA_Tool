@@ -387,7 +387,48 @@ class TemplateMatcher:
             
 
         return self.matches
+    def experience_video(self,image):
+        self.matches.clear()
+        
+        h,w,_ = image.shape
+        print(f"해상도 : {w},{h}")
+        if w > 2048 and w < 2560:
+            self.scale_range=(0.5, 1.2, 0.1)
+        elif w < 2048:
+            self.scale_range=(0.02, 0.7, 0.02)
+        else:
+            self.scale_range=(0.8, 3.0, 0.1)
+        
+        gray_frame = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
+        best_score = 0
+        best_location = None
+        best_scale = 1.0
+        best_name = ""
+        
+        max_threads = 8
+        semaphore = threading.Semaphore(max_threads)
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            lab_muti_tm = []
+            
+            # Multi-Scale TM
+            # with tqdm(total=total_task_lab_1, desc="Multi-Scale TM") as pbar:
+            for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_range[2]):
+                lab_muti_tm.append(executor.submit(self.multi_scale_match_a_template,semaphore,gray_frame,scale))
+            
+            # 작업이 완료될 때까지 대기하고 결과를 출력합니다.
+            for lab_1 in as_completed(lab_muti_tm):
+                # pbar.update(1)
+                location, scale, score, best_name = lab_1.result()
+                if score > best_score:
+                    best_score = score
+                    best_location = location
+                    best_scale = scale
 
+            self.matches.append((best_location, best_scale, best_score, best_name))
+            
+            # return cv2.cvtColor(np.array(self.draw_matches_lab(image)), cv2.COLOR_RGB2BGR)
+        return self.matches
+        
     def expierience_lab(self, image):
         self.matches.clear()
         
