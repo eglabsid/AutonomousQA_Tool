@@ -95,7 +95,37 @@ def rotate_image(image, angle):
     rotated = cv2.warpAffine(image, M, (new_w, new_h))
     return rotated
 
+def make_traing_datas():
+    key_lst = ['images','annotation','categories']
+    images  = []
+    annotations = []
+    categories = []
 
+def make_image(id,filename,height,width):
+    image = {}
+    image['id'] = id
+    image['file_name'] = filename
+    image['height'] = height
+    image['width'] = width
+    return image
+
+def make_annotation(id,image_id,category_id,bbox,area,iscrowd):
+    annotation ={}
+    annotation['id'] = id
+    annotation['image_id'] = image_id
+    annotation['category_id'] = category_id
+    annotation['bbox'] = bbox
+    annotation['area'] = area
+    annotation['iscrowd'] = iscrowd # 1이면 군집, 0이면 단일
+    return annotation
+
+def make_category(id,name,supercategory):
+    category = {}
+    category['id']=id
+    category['name']=name
+    category['supercategory']=supercategory
+    return category
+    
 
 # 결과 저장 디렉토리 생성
 output_dir = f'video/output_images'
