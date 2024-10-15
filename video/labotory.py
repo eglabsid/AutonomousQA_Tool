@@ -6,9 +6,10 @@ import json
 import asyncio
 import concurrent.futures
 
-from process_handler import WindowProcessHandler
+# from process_handler import WindowProcessHandler
 from template_matcher import TemplateMatcher
 
+from collections import OrderedDict # 순서대로 Dict
 
 import cv2
 import numpy as np
@@ -61,8 +62,12 @@ def get_match_info(matches):
         bottom_right = (top_left[0] + int(h * scale), top_left[1] + int(w * scale))
             
         gui_dic = {} # gui 유사도, 좌표, ui name 탐색
-        mc_loc = [loc[0] + int(w * scale * 0.5), loc[1] + int(h * scale * 0.5)]
-        gui_dic[name] = ( template_tuple[0] ,template_tuple[1], mc_loc, top_left+bottom_right )
+        mc_loc = [loc[0] + int(w * scale * 0.5), loc[1] + int(h * scale * 0.5)]        
+
+        bbox = top_left + bottom_right
+        
+        # 파일명, 이미지데이터, 중심좌표, bbox
+        gui_dic[name] = ( template_tuple[0] ,template_tuple[1], mc_loc, bbox )
         match_info.append(gui_dic)
     return match_info
 
@@ -95,14 +100,16 @@ def rotate_image(image, angle):
     rotated = cv2.warpAffine(image, M, (new_w, new_h))
     return rotated
 
-def make_traing_datas():
+def make_train_datas():
     key_lst = ['images','annotation','categories']
-    images  = []
-    annotations = []
-    categories = []
+    train_datas = {}
+    for key in key_lst:
+        train_datas[key] = []
+
+    return train_datas
 
 def make_image(id,filename,height,width):
-    image = {}
+    image = OrderedDict()
     image['id'] = id
     image['file_name'] = filename
     image['height'] = height
@@ -110,7 +117,7 @@ def make_image(id,filename,height,width):
     return image
 
 def make_annotation(id,image_id,category_id,bbox,area,iscrowd):
-    annotation ={}
+    annotation =OrderedDict()
     annotation['id'] = id
     annotation['image_id'] = image_id
     annotation['category_id'] = category_id
@@ -120,7 +127,7 @@ def make_annotation(id,image_id,category_id,bbox,area,iscrowd):
     return annotation
 
 def make_category(id,name,supercategory):
-    category = {}
+    category = OrderedDict()
     category['id']=id
     category['name']=name
     category['supercategory']=supercategory
@@ -128,14 +135,14 @@ def make_category(id,name,supercategory):
     
 
 # 결과 저장 디렉토리 생성
-output_dir = f'video/output_images'
+output_dir = f'video'
 os.makedirs(output_dir, exist_ok=True)
     
 # Delete the JSON file if it already exists
-tmp_file = 'results.json'
+tmp_file = 'train_datas.json'
 json_file_path = os.path.join(output_dir, tmp_file)
-if os.path.exists(json_file_path):
-    os.remove(json_file_path)
+# if os.path.exists(json_file_path):
+#     os.remove(json_file_path)
 
 def argments_rotate(folder):
     is_rotate = True
@@ -144,7 +151,7 @@ def argments_rotate(folder):
         for k,v in template.items():
             name = k.split('\\')[-1]
             name = name.split('_')[0]
-            for angle in range(0, 360, 45):
+            for angle in range(0, 360, 30):
                 rotated_image = rotate_image(v, angle)
                 result_filename = f'{name}_{angle}.jpg'
                 result_path = os.path.join(output_dir, result_filename)
@@ -152,15 +159,17 @@ def argments_rotate(folder):
             
 
 def make_argments(match_info,frame, frame_cnt):
-    results = []
+    # results = []
     # infos = [ k+v for k,v in info.items() for info in match_info]
     
     # Load existing results if the file exists
-    
+    results = ['images','annotation','categories']
     if os.path.exists(json_file_path):
         with open(json_file_path, 'r', encoding='utf-8') as json_file:
             results =  json.load(json_file)
-            
+    
+    # train_datas = make_train_datas()
+
     while len(match_info) > 0:
         infos = match_info.pop(0)
         # print(f"{infos}")
@@ -171,11 +180,23 @@ def make_argments(match_info,frame, frame_cnt):
             result_filename = f'{k}_{frame_cnt}.jpg'
             path = os.path.join(output_dir, result_filename)
             cv2.imwrite(path, frame)
-            results.append({
-                'boxs': v[-1],
-                'labels': k,
-                'coord': v[-2]
-            })
+
+            # Images : id/파일명/h/w
+            # Annotation : id/image_id/category_id/bbx/area/iscrowd
+            # categories : id/name/supercategory
+            image_id = int(results['images'][-1]['id'])
+            annotation_id = int(results['annotations'][-1]['id'])
+            category_id = int(results['categories'][-1]['id'])
+            
+            h,w = v[1].shape
+            area = w*h            
+            image = make_image(image_id,v[0],h,w)
+            is_crowed = 0
+            annotation = make_annotation(annotation_id,image_id,category_id,v[-1],area,is_crowed)
+            c_name = k
+            super_c_name = 'game'
+            category = make_category(category_id,c_name,super_c_name)
+
     
     with open(json_file_path, 'w', encoding='utf-8') as json_file:
         json.dump(results, json_file, ensure_ascii=False, indent=4)
