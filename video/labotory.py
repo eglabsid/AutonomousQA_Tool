@@ -31,17 +31,18 @@ def make_template(root_folder, is_rotate = False):
         # 사용 예제
     templates = []
     
-    for file in all_images:
-        # name = file.split('/')[-1]
-        name = file.split('.')[0]
+    for name in all_images:
+        
+        # name = name.split('\\')[-1]
+        # name = file.split('.')[0]
         # print(name)
         template = {}
         # template[name] = load_and_resize_image(file)
         # template[name] =  cv2.imread(file, cv2.IMREAD_COLOR)
         if not is_rotate:
-            template[name] =  cv2.imread(file, cv2.IMREAD_GRAYSCALE)
+            template[name] =  cv2.imread(name, cv2.IMREAD_GRAYSCALE)
         else:
-            template[name] =  cv2.imread(file, cv2.IMREAD_COLOR)
+            template[name] =  cv2.imread(name, cv2.IMREAD_COLOR)
         templates.append(template)
     return templates
     
@@ -101,14 +102,61 @@ def rotate_image(image, angle):
     return rotated
 
 def make_train_datas():
-    key_lst = ['images','annotation','categories']
+    key_lst = ['images','annotations','categories']
     train_datas = {}
     for key in key_lst:
         train_datas[key] = []
 
     return train_datas
 
-def make_image(id,filename,height,width):
+def make_image(images,filename,h,w):
+    id = -1
+    is_exist = False
+    for image in images:
+        if image['file_name'] == filename:
+            return image, not is_exist
+        id = int(image['id'])
+    
+    if id < 0:
+        id = 1
+    else:
+        id += 1
+    
+    return add_image(id,filename,h,w), is_exist
+
+def make_annotation(annotations,image_id,category_id,bbox,area,iscrowd=0):
+    
+    id = -1
+    is_exist = False
+    for annotation in annotations:
+        if annotation['image_id'] == image_id:
+            return annotation, not is_exist
+        id = int(annotation['id'])
+    # area = abs(bbox[0]-bbox[1])*abs(bbox[2]-bbox[3])
+    
+    if id < 0:
+        id = 1
+    else:
+        id += 1
+    return add_annotation(id,image_id,category_id,bbox,area,iscrowd), is_exist
+
+def make_category(categories,name):
+    id = -1
+    is_exist = False
+    for category in categories:
+        if category['name'] == name:
+            return category, not is_exist
+        id = int(category['id'])
+    
+    if id < 0:
+        id = 1
+    else:
+        id += 1
+        
+    return add_category(id, name), is_exist
+        
+
+def add_image(id,filename,height,width):
     image = OrderedDict()
     image['id'] = id
     image['file_name'] = filename
@@ -116,7 +164,7 @@ def make_image(id,filename,height,width):
     image['width'] = width
     return image
 
-def make_annotation(id,image_id,category_id,bbox,area,iscrowd):
+def add_annotation(id,image_id,category_id,bbox,area,iscrowd):
     annotation =OrderedDict()
     annotation['id'] = id
     annotation['image_id'] = image_id
@@ -126,23 +174,23 @@ def make_annotation(id,image_id,category_id,bbox,area,iscrowd):
     annotation['iscrowd'] = iscrowd # 1이면 군집, 0이면 단일
     return annotation
 
-def make_category(id,name,supercategory):
+def add_category(id,name):
     category = OrderedDict()
     category['id']=id
     category['name']=name
-    category['supercategory']=supercategory
+    # category['supercategory']=supercategory
     return category
     
 
 # 결과 저장 디렉토리 생성
-output_dir = f'video'
+output_dir = f'video/output_images'
 os.makedirs(output_dir, exist_ok=True)
     
 # Delete the JSON file if it already exists
-tmp_file = 'train_datas.json'
+tmp_file = 'dataset.json'
 json_file_path = os.path.join(output_dir, tmp_file)
-# if os.path.exists(json_file_path):
-#     os.remove(json_file_path)
+if os.path.exists(json_file_path):
+    os.remove(json_file_path)
 
 def argments_rotate(folder):
     is_rotate = True
@@ -159,16 +207,14 @@ def argments_rotate(folder):
             
 
 def make_argments(match_info,frame, frame_cnt):
-    # results = []
-    # infos = [ k+v for k,v in info.items() for info in match_info]
+    
     
     # Load existing results if the file exists
-    results = ['images','annotation','categories']
+    # results = []
+    results = make_train_datas()
     if os.path.exists(json_file_path):
         with open(json_file_path, 'r', encoding='utf-8') as json_file:
             results =  json.load(json_file)
-    
-    # train_datas = make_train_datas()
 
     while len(match_info) > 0:
         infos = match_info.pop(0)
@@ -183,21 +229,25 @@ def make_argments(match_info,frame, frame_cnt):
 
             # Images : id/파일명/h/w
             # Annotation : id/image_id/category_id/bbx/area/iscrowd
-            # categories : id/name/supercategory
-            image_id = int(results['images'][-1]['id'])
-            annotation_id = int(results['annotations'][-1]['id'])
-            category_id = int(results['categories'][-1]['id'])
+            # categories : id/name
+            # 새로운 데이터를 추가할지 여부 확인 및 추가
+            # h,w = v[1].shape
+            # image, is_exist = make_image(results['images'],v[0],h,w)
             
-            h,w = v[1].shape
-            area = w*h            
-            image = make_image(image_id,v[0],h,w)
-            is_crowed = 0
-            annotation = make_annotation(annotation_id,image_id,category_id,v[-1],area,is_crowed)
-            c_name = k
-            super_c_name = 'game'
-            category = make_category(category_id,c_name,super_c_name)
-
-    
+            h,w,_ = frame.shape
+            image, is_exist = make_image(results['images'],result_filename,h,w)
+            
+            if not is_exist:
+                results['images'].append(image)
+            category, is_exist = make_category(results['categories'],k)
+            if not is_exist:
+                results['categories'].append(category)
+            area = w*h
+            # is_crowed = 0
+            annotation,is_exist = make_annotation(results['annotations'],image['id'],category['id'],v[-1],area)
+            if not is_exist:
+                results['annotations'].append(annotation)
+        
     with open(json_file_path, 'w', encoding='utf-8') as json_file:
         json.dump(results, json_file, ensure_ascii=False, indent=4)
         
