@@ -1,4 +1,5 @@
-import sys,os
+import sys, os, time, datetime
+import pandas as pd
 from PyQt5 import uic, QtWidgets
 from PyQt5.QtGui import QIcon, QImage, QPixmap
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
@@ -27,6 +28,7 @@ class mainWindow(QtWidgets.QMainWindow):
         super(mainWindow, self).__init__()
         self.initUI()
         self.showNormal()
+        self.start_time = None
         
     def initUI(self):
         # UI 파일 로드
@@ -107,6 +109,7 @@ class mainWindow(QtWidgets.QMainWindow):
         self.repeater.receive_handler(self.handler)
         self.repeater.subfolder.connect(self.update_decision)
         self.repeater.finished.connect(self.clear)
+        self.repeater.action_finished.connect(self.routine_result)
         
         self.rematch.connect(self.repeater.receive_matcher)
         
@@ -140,6 +143,7 @@ class mainWindow(QtWidgets.QMainWindow):
             # actions = [self.action_sequence.item(i) for i in range(self.action_sequence.count())]
             items = [item.data(Qt.UserRole) for item in self.action_sequence.findItems("", Qt.MatchContains)]
             self.repeater.receive_items(items)
+            self.start_time = time.time()
             self.log_text.append("Start The Routine")
             self.repeater.start()
             
@@ -152,6 +156,31 @@ class mainWindow(QtWidgets.QMainWindow):
             self.log_text.append("Stop The Routine")
             self.repeater.wait()
             self.showNormal()
+
+    def routine_result(self, items):
+        end_time = time.time()
+        total_time = end_time - self.start_time
+        print(total_time)
+        print(items)
+        data = []
+        for idx, item in enumerate(items):
+            ptype = item[0].name  # Enum name, e.g., CLICK
+            action_name = item[1][0]
+            coordinates = f"{item[1][1][0]},{item[1][1][1]}"
+            preset = "pre-set0" if idx == 0 else ""
+            error = 0  # default value for error column
+            runtime = total_time if idx == 0 else ""  # set runtime only for the first row
+            data.append([preset, ptype, action_name, coordinates, error, runtime])
+
+        df = pd.DataFrame(data, columns=["Synario", "action", "name", "Position", "error", "RunTime"])
+
+        current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"action_items_{current_time}.xlsx"
+
+        df.to_excel(filename, index=False)
+
+        print(f"Data has been saved to {filename}")
+
 
     def open_browser(self):
         self.gui_resource_root_dir = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select Directory')
@@ -220,7 +249,7 @@ class mainWindow(QtWidgets.QMainWindow):
         if w > 2048 and w < 2560:
             self.matcher.scale_range=(0.5, 1.2, 0.1)
         elif w < 2048:
-            self.matcher.scale_range=(0.02, 0.7, 0.02)
+            self.matcher.scale_range=(0.2, 0.7, 0.02)
         else:
             self.matcher.scale_range=(0.8, 2.0, 0.1)
         # threshhold = 0.9
