@@ -31,6 +31,9 @@ if current_os == "Windows":
     import ctypes
     from ctypes import windll
 
+    # DPI 인식 활성화
+    ctypes.windll.shcore.SetProcessDpiAwareness(2)
+    
     import win32gui
     import win32ui
     # import win32con
@@ -65,8 +68,8 @@ class WindowProcessHandler():
     __slot__ = ['hwnd','window_process']
     
     def __init__(self):
-        # DPI 인식 활성화
-        ctypes.windll.shcore.SetProcessDpiAwareness(2)
+        # # DPI 인식 활성화
+        # ctypes.windll.shcore.SetProcessDpiAwareness(2)
         
         # self.frame = frame
         
