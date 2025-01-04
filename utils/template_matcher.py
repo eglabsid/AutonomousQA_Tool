@@ -213,9 +213,11 @@ class UITemplateMatcher(QThread):
             print(f"{loc}")
             top_left = loc
             bottom_right = (top_left[0] + int(template[1].shape[1] * scale), top_left[1] + int(template[1].shape[0] * scale))
+            
+            name = template[0].split("\\")[-1]
             cv2.rectangle(image, top_left, bottom_right, (0, 255, 0), 4)
             # cv2.putText(image, f'{score:.2f}', (top_left[0], top_left[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
-            cv2.putText(image, f'{template[0]}', (top_left[0], top_left[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
+            cv2.putText(image, f'{name}', (top_left[0], bottom_right[1]+25), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255, 255, 255), 2)
             # cv2.imwrite(f"obs_result/{i}.jpg",image)
         return image
         
@@ -434,12 +436,16 @@ class TemplateMatcher:
         
         h,w,_ = image.shape
         print(f"해상도 : {w},{h}")
-        if w > 2048 and w < 2560:
+        font_size = 1.5
+        if w >= 2560 and w < 2600:
             self.scale_range=(0.5, 1.2, 0.1)
         elif w < 2048:
             self.scale_range=(0.02, 0.7, 0.02)
+            font_size = 0.7
         else:
             self.scale_range=(0.8, 3.0, 0.1)
+            font_size = 3.0
+            
         
         gray_frame = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
         best_score = 0
@@ -478,7 +484,7 @@ class TemplateMatcher:
             self.matches.append((best_location, best_scale, best_score, best_name))
             
             # return cv2.cvtColor(np.array(self.draw_matches_lab(image)), cv2.COLOR_RGB2BGR)
-        return self.draw_matches_lab(image)
+        return self.draw_matches_lab(image, font_size)
                 # return self.draw_matches_lab(image)
         
     def get_a_multi_scale_match(self, image):
@@ -522,7 +528,7 @@ class TemplateMatcher:
         return self.draw_matches(image)
         # return self.best_val, self.best_match, self.best_scale, self.best_loc
     
-    def draw_matches_lab(self,image):
+    def draw_matches_lab(self,image,font_size=1.0):
         
         for (loc, scale, score, name) in self.matches:
             # print(f"{name} : {loc}")
@@ -530,12 +536,14 @@ class TemplateMatcher:
             bottom_right = (top_left[0] + int(self.template.shape[1] * scale), top_left[1] + int(self.template.shape[0] * scale))
             if name == "Template Matching":
                 # print(f"{top_left+bottom_right} < {name}")
-                cv2.rectangle(image, top_left, bottom_right, (0, 255, 0), 4)
-                cv2.putText(image, f'{name} ,{score:.2f}', (bottom_right[0], bottom_right[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2)
+                color = (0, 0, 0)
+                cv2.rectangle(image, top_left, bottom_right, color, int(4*font_size))
+                cv2.putText(image, f'{name} ,{score:.2f}', (bottom_right[0], bottom_right[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, font_size, color, int(2*font_size))
             elif name == "Mult-Scale Template Matching":
                 # print(f"{top_left+bottom_right} < {name}")
-                cv2.rectangle(image, top_left, bottom_right, (255, 0, 0), 4)
-                cv2.putText(image, f'{name} ,{score:.2f}', (top_left[0], top_left[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 0, 0), 2)
+                color = (255, 255, 255)
+                cv2.rectangle(image, top_left, bottom_right, color, int(4*font_size))
+                cv2.putText(image, f'{name} ,{score:.2f}', (top_left[0], top_left[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, font_size, color, int(2*font_size))
         
         path = f'lab_result/{self.lab_cnt}.jpg'
         cv2.imwrite(path,image)

@@ -8,7 +8,7 @@ from src.action_dialog import ActionDialog
 from src.image_dialog import ImageDialog
 from src.interval_dialog import IntervalDialog
 
-from utils.process_handler import WindowProcessHandler
+from utils.process_handler import WindowProcessHandler, create_directory_if_not_exists
 from utils.repeat_pattern import RepeatPattern, ItemType, SendKey
 from utils.template_matcher import UITemplateMatcher, get_all_images, get_subfolders #,load_and_resize_image
 from utils.ocr_finder import OCRFinder
@@ -239,7 +239,8 @@ class mainWindow(QtWidgets.QMainWindow):
         
         # 윈도우 화면 전체 캡쳐
         QThread.msleep(int(300))
-        image = self.handler.caputer_monitor_to_cv_img()
+        # image = self.handler.caputer_monitor_to_cv_img()
+        image = self.handler.captuer_screen_on_application()
         
         # GUI 폴더 경로상의 이미지 
         templates = self.make_gui_template(self.gui_img_files)
@@ -281,23 +282,23 @@ class mainWindow(QtWidgets.QMainWindow):
                 self.match_gui_templates()
                 pass
             
-            # 루트 한번
-            elif self.matcher.iter == 1:
-                self.gui_img_files = get_all_images(self.gui_resource_root_dir)
-                self.matcher.iter += 1
-                self.match_gui_templates()                
-                pass
+            # # 루트 한번
+            # elif self.matcher.iter == 1:
+            #     self.gui_img_files = get_all_images(self.gui_resource_root_dir)
+            #     self.matcher.iter += 1
+            #     self.match_gui_templates()                
+            #     pass
             
-            # 모든 폴더에 대해 재 시도
-            elif len(self.gui_subfolders)>0:
-                subfodler = self.gui_subfolders.pop()
-                search = self.gui_resource_root_dir+f"/{subfodler}"
-                # GUI 폴더 경로상의 이미지 
-                self.gui_img_files = get_all_images(search)
-                self.matcher.iter +=1
-                # print(self.matcher.iter)
-                self.match_gui_templates()
-                pass
+            # # 모든 폴더에 대해 재 시도
+            # elif len(self.gui_subfolders)>0:
+            #     subfodler = self.gui_subfolders.pop()
+            #     search = self.gui_resource_root_dir+f"/{subfodler}"
+            #     # GUI 폴더 경로상의 이미지 
+            #     self.gui_img_files = get_all_images(search)
+            #     self.matcher.iter +=1
+            #     # print(self.matcher.iter)
+            #     self.match_gui_templates()
+            #     pass
             # elif self.matcher.iter == len():
             self.progress_bar.setFormat(" I can't ")
             self.gui_search.setEnabled(True)    
@@ -313,6 +314,12 @@ class mainWindow(QtWidgets.QMainWindow):
         # gui 관련 파라미터 업데이트
         self.update_gui_parameters(self.matcher)
         
+        folder_dir = os.getcwd()+"/screen"
+        create_directory_if_not_exists(folder_dir)
+        saved_file = folder_dir+"/gui_result.jpg"
+        cv2.imwrite(f"{saved_file}",result_image)
+        print(f"Screenshot saved as {saved_file}")
+            
         self.gui_pixmap = self.view_resized_img_on_widget(result_image,self.gui_result.width(),self.gui_result.height())
         self.gui_result.setPixmap(self.gui_pixmap)
         
@@ -518,6 +525,7 @@ class mainWindow(QtWidgets.QMainWindow):
         QThread.msleep(int(500))
         # 윈도우 화면 전체 캡쳐
         image = self.handler.caputer_monitor_to_cv_img()
+        # image = self.handler.captuer_screen_on_application()
         
         self.matcher.update_img_datas(image,templates)
         self.matcher.start()  # QThread 시작
