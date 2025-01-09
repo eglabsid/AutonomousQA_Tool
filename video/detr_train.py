@@ -52,7 +52,7 @@ def denormalize(tensor,mean,std):
 # from torch.utils.data import DataLoader
 
 # 1. 데이터셋 로드
-class CocoDetectionDataset(Dataset):
+class CustomDataset(Dataset):
     def __init__(self, root, annotation, transforms=None):
         """
         COCO 데이터셋을 PyTorch Dataset으로 변환.
@@ -63,22 +63,33 @@ class CocoDetectionDataset(Dataset):
             transforms (callable, optional): 이미지를 전처리하기 위한 transform 함수.
         """
         self.root = root
-        self.coco = COCO(annotation)
-        self.ids = list(self.coco.imgs.keys())
+        # self.annotations = COCO(annotation)
+        self.annotations = None 
+        if os.path.exists(annotation):
+            with open(annotation, 'r', encoding='utf-8') as json_file:
+                self.annotations = json.load(json_file)
+
+        # self.ids = [list(self.coco.imgs.keys())]
+        # self.ids = [ int(ann['images']['ids']) for ann in self.annotations]
+        self.ids = self.annotations['images']
+        self.img_info = self.annotations['images']
         self.transforms = transforms
 
     def __getitem__(self, index):
         # 이미지 ID 가져오기
-        img_id = self.ids[index]
+        img_id = self.ids[index]['id']
+
         
         # 이미지 경로 및 읽기
-        img_info = self.coco.loadImgs(img_id)[0]
+        # img_info = self.coco.loadImgs(img_id)[0]
+        img_info = self.img_info[index]
         img_path = os.path.join(self.root, img_info['file_name'])
         image = Image.open(img_path).convert('RGB')
 
         # Annotation 가져오기
-        ann_ids = self.coco.getAnnIds(imgIds=img_id)
-        annotations = self.coco.loadAnns(ann_ids)
+        # ann_ids = self.coco.getAnnIds(imgIds=img_id)
+        # annotations = self.coco.loadAnns(ann_ids)
+        annotations = self.annotations['annotations']
 
         # 바운딩 박스와 레이블 준비
         boxes = []
@@ -120,7 +131,7 @@ def prepare_dataloader(root, annotation, batch_size=4):
         DataLoader: PyTorch DataLoader 객체.
     """
     transforms = get_transforms()
-    dataset = CocoDetectionDataset(root, annotation, transforms)
+    dataset = CustomDataset(root, annotation, transforms)
     
     dataloader = DataLoader(
         dataset,
@@ -168,23 +179,24 @@ class DetrWithFeatureExtractor(torch.nn.Module):
         # 3. PIL 이미지로 변환
         pil_image = F.to_pil_image(clamped_tensor)
         # pil_image.show()
-        inputs = self.feature_extractor(images=images,annotations=targets, return_tensors="pt")
+        inputs = self.feature_extractor(images=images, return_tensors="pt")
         pixel_values = inputs["pixel_values"]
 
-        # If targets are provided, preprocess them
-        if targets is not None:
-            processed_targets = []
-            for target in targets:
-                processed_target = {
-                    "boxes": target["boxes"].float(),
-                    "labels": target["labels"]
-                }
-                processed_targets.append(processed_target)
-        else:
-            processed_targets = None
+        # # If targets are provided, preprocess them
+        # if targets is not None:
+        #     processed_targets = []
+        #     for target in targets:
+        #         processed_target = {
+        #             "boxes": target["boxes"].float(),
+        #             "labels": target["labels"]
+        #         }
+        #         processed_targets.append(processed_target)
+        # else:
+        #     processed_targets = None
 
         # Forward pass through the DETR model
-        outputs = self.model(pixel_values=pixel_values, labels=processed_targets)
+        outputs = self.model(pixel_values=pixel_values, labels=targets)
+        
         return outputs
     
 # 3. Transform 정의
@@ -201,6 +213,9 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=50)
     for images, targets in tqdm(data_loader, desc=f"Epoch {epoch}"):
         images = [img.to(device) for img in images]
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+
+        # pixel_values = pixel_values.to(device)
+        # targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
         loss_dict = model(images, targets)
         losses = sum(loss for loss in loss_dict.values())
@@ -238,7 +253,6 @@ def main():
     # device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     device = torch.device("mps") if torch.cuda.is_available() else torch.device("cpu")
 
-    # Dataset and Dataloader
 
     # Dataset and Dataloader
     data_loader = prepare_dataloader(data_dir,annotation_dir)

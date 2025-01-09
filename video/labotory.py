@@ -6,14 +6,25 @@ import json
 import asyncio
 import concurrent.futures
 
-from process_handler import WindowProcessHandler
+# from process_handler import WindowProcessHandler
 from template_matcher import TemplateMatcher
 
 
 import cv2
 import numpy as np
 
+import re
 
+def atoi(text):
+    return int(text) if text.isdigit() else text
+
+def natural_keys(text):
+    '''
+    alist.sort(key=natural_keys) sorts in human order
+    http://nedbatchelder.com/blog/200712/human_sorting.html
+    (See Toothy's implementation in the comments)
+    '''
+    return [ atoi(c) for c in re.split(r'(\d+)', text) ]
 
 def make_template(root_folder, is_rotate = False):
     # 이미지 파일 확장자 목록
@@ -26,8 +37,11 @@ def make_template(root_folder, is_rotate = False):
     for extension in image_extensions:
         # all_images.extend(glob.glob(os.path.join(root_folder, '**', extension), recursive=False))
         all_images.extend(glob.glob(os.path.join(root_folder, extension), recursive=False))
-        
-        # 사용 예제
+    
+    # Sorting image files
+    all_images.sort(key=natural_keys)
+
+    # 사용 예제
     templates = []
     
     for file in all_images:
@@ -62,7 +76,7 @@ def get_match_info(matches):
             
         gui_dic = {} # gui 유사도, 좌표, ui name 탐색
         mc_loc = [loc[0] + int(w * scale * 0.5), loc[1] + int(h * scale * 0.5)]
-        gui_dic[name] = ( template_tuple[0] ,template_tuple[1], mc_loc, top_left+bottom_right )
+        gui_dic[name] = ( template_tuple[0] ,template_tuple[1], mc_loc, top_left+bottom_right, [w,h] )
         match_info.append(gui_dic)
     return match_info
 
@@ -96,13 +110,14 @@ def rotate_image(image, angle):
     return rotated
 
 
+g_supercategory = f"geometryDash"
 
 # 결과 저장 디렉토리 생성
-output_dir = f'video/output_images'
+output_dir = f'video/dataset/images'
 os.makedirs(output_dir, exist_ok=True)
     
 # Delete the JSON file if it already exists
-tmp_file = 'results.json'
+tmp_file = f'../annotations.json'
 json_file_path = os.path.join(output_dir, tmp_file)
 if os.path.exists(json_file_path):
     os.remove(json_file_path)
@@ -116,21 +131,52 @@ def argments_rotate(folder):
             name = name.split('_')[0]
             for angle in range(0, 360, 45):
                 rotated_image = rotate_image(v, angle)
-                result_filename = f'{name}_{angle}.jpg'
+                result_filename = f'{name}_{angle}.png'
                 result_path = os.path.join(output_dir, result_filename)
                 cv2.imwrite(result_path, rotated_image)
             
+def make_images(id,file_name,width,height):
+    result = {}
+    result['id'] = id
+    result['file_name'] = file_name
+    result['width'] = width
+    result['height'] = height
+    return result
+
+def make_annotations(id,image_id,category_id,bbox,area,iscrowd=0):
+    result = {}
+    result['id'] = id
+    result['image_id'] = image_id
+    result['category_id'] = category_id
+    result['bbox'] = bbox
+    result['area'] = area
+    result['iscrowd'] = iscrowd
+    return result
+
+def make_categories(id,name,supercategory):
+    result = {}
+    result['id'] = id
+    result['name'] = name
+    result['supercategory'] = supercategory
+    return result
 
 def make_argments(match_info,frame, frame_cnt):
-    results = []
-    # infos = [ k+v for k,v in info.items() for info in match_info]
-    
+    annotations = {}
+
+    image_id = 1
+    category_id = 0
+
+    # infos = [ k+v for k,v in info.items() for info in match_info]    
     # Load existing results if the file exists
-    
     if os.path.exists(json_file_path):
         with open(json_file_path, 'r', encoding='utf-8') as json_file:
-            results =  json.load(json_file)
-            
+            annotations = json.load(json_file)
+        category_id = int(annotations['categories'][-1]['id'])
+    else:
+        annotations['images'] = []
+        annotations['annotations'] = []
+        annotations['categories'] = []
+
     while len(match_info) > 0:
         infos = match_info.pop(0)
         # print(f"{infos}")
@@ -141,16 +187,40 @@ def make_argments(match_info,frame, frame_cnt):
             result_filename = f'{k}_{frame_cnt}.jpg'
             path = os.path.join(output_dir, result_filename)
             cv2.imwrite(path, frame)
-            results.append({
-                'boxs': v[-1],
-                'labels': k,
-                'coord': v[-2]
-            })
+
+            h,w,_ = frame.shape
+            
+            # w,h = v[-1]
+            area = w*h
+            iscrowd = 0
+            name = k
+            supercategory = g_supercategory
+
+            images_data = make_images(frame_cnt,path,w,h)
+            
+            annotation_data = make_annotations(frame_cnt,image_id,category_id,v[-2],area,iscrowd)
+
+            annotations['images'].append(images_data)
+            annotations['annotations'].append(annotation_data)
+
+            # 이미 존재하는 카테고리 이름을 집합으로 추출
+            existing_category_names = {category['name'] for category in annotations['categories']}
+
+            # 새 카테고리를 추가할지 여부 확인
+            if k not in existing_category_names:
+                categories_data = make_categories(category_id + 1, name, supercategory)
+                annotations['categories'].append(categories_data)
+            
+            # annotations.append({
+            #     'boxs': v[-2],
+            #     'labels': k,
+            #     'coord': v[-3]
+            # })
     
     with open(json_file_path, 'w', encoding='utf-8') as json_file:
-        json.dump(results, json_file, ensure_ascii=False, indent=4)
+        json.dump(annotations, json_file, ensure_ascii=False, indent=4)
         
-    return results, frame_cnt
+    return annotations, frame_cnt
 
 labotory = TemplateMatcher(template=None,scale_range=(0.5,1.0,0.1))
 
@@ -186,6 +256,7 @@ async def capture_frames():
     loop = asyncio.get_event_loop()
     # rotate 추가
     # argments_rotate(template_folder) 
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
         while True:
             if not paused:

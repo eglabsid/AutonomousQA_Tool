@@ -426,8 +426,8 @@ class TemplateMatcher:
                 template = templates.pop(0)
                 # Dict 처리
                 template_tuple = [ (k,v) for k,v in template.items()][0]
-                for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_range[2]):
-                    lab_muti_tm.append(executor.submit(self.multi_scale_match_mixed_templates,semaphore,gray_frame, template_tuple,None))
+                # for scale in np.arange(self.scale_range[0], self.scale_range[1], self.scale_range[2]):
+                lab_muti_tm.append(executor.submit(self.multi_scale_match_mixed_templates,semaphore,gray_frame, template_tuple,None))
             
             # 작업이 완료될 때까지 대기하고 결과를 출력합니다.
             for lab_1 in as_completed(lab_muti_tm):
