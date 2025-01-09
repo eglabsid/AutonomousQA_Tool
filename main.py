@@ -1,4 +1,5 @@
-import sys,os
+import sys, os, time, datetime
+import pandas as pd
 from PyQt5 import uic, QtWidgets
 from PyQt5.QtGui import QIcon, QImage, QPixmap
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
@@ -7,7 +8,7 @@ from src.action_dialog import ActionDialog
 from src.image_dialog import ImageDialog
 from src.interval_dialog import IntervalDialog
 
-from utils.process_handler import WindowProcessHandler
+from utils.process_handler import WindowProcessHandler, create_directory_if_not_exists
 from utils.repeat_pattern import RepeatPattern, ItemType, SendKey
 from utils.template_matcher import UITemplateMatcher, get_all_images, get_subfolders #,load_and_resize_image
 from utils.ocr_finder import OCRFinder
@@ -27,6 +28,7 @@ class mainWindow(QtWidgets.QMainWindow):
         super(mainWindow, self).__init__()
         self.initUI()
         self.showNormal()
+        self.start_time = None
         
     def initUI(self):
         # UI 파일 로드
@@ -107,6 +109,7 @@ class mainWindow(QtWidgets.QMainWindow):
         self.repeater.receive_handler(self.handler)
         self.repeater.subfolder.connect(self.update_decision)
         self.repeater.finished.connect(self.clear)
+        self.repeater.action_finished.connect(self.routine_result)
         
         self.rematch.connect(self.repeater.receive_matcher)
         
@@ -140,6 +143,7 @@ class mainWindow(QtWidgets.QMainWindow):
             # actions = [self.action_sequence.item(i) for i in range(self.action_sequence.count())]
             items = [item.data(Qt.UserRole) for item in self.action_sequence.findItems("", Qt.MatchContains)]
             self.repeater.receive_items(items)
+            self.start_time = time.time()
             self.log_text.append("Start The Routine")
             self.repeater.start()
             
@@ -152,6 +156,31 @@ class mainWindow(QtWidgets.QMainWindow):
             self.log_text.append("Stop The Routine")
             self.repeater.wait()
             self.showNormal()
+
+    def routine_result(self, items):
+        end_time = time.time()
+        total_time = end_time - self.start_time
+        print(total_time)
+        print(items)
+        data = []
+        for idx, item in enumerate(items):
+            ptype = item[0].name  # Enum name, e.g., CLICK
+            action_name = item[1][0]
+            coordinates = f"{item[1][1][0]},{item[1][1][1]}"
+            preset = "pre-set0" if idx == 0 else ""
+            error = 0  # default value for error column
+            runtime = total_time if idx == 0 else ""  # set runtime only for the first row
+            data.append([preset, ptype, action_name, coordinates, error, runtime])
+
+        df = pd.DataFrame(data, columns=["Synario", "action", "name", "Position", "error", "RunTime"])
+
+        current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"action_items_{current_time}.xlsx"
+
+        df.to_excel(filename, index=False)
+
+        print(f"Data has been saved to {filename}")
+
 
     def open_browser(self):
         self.gui_resource_root_dir = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select Directory')
@@ -210,7 +239,8 @@ class mainWindow(QtWidgets.QMainWindow):
         
         # 윈도우 화면 전체 캡쳐
         QThread.msleep(int(300))
-        image = self.handler.caputer_monitor_to_cv_img()
+        # image = self.handler.caputer_monitor_to_cv_img()
+        image = self.handler.captuer_screen_on_application()
         
         # GUI 폴더 경로상의 이미지 
         templates = self.make_gui_template(self.gui_img_files)
@@ -220,7 +250,7 @@ class mainWindow(QtWidgets.QMainWindow):
         if w > 2048 and w < 2560:
             self.matcher.scale_range=(0.5, 1.2, 0.1)
         elif w < 2048:
-            self.matcher.scale_range=(0.02, 0.7, 0.02)
+            self.matcher.scale_range=(0.2, 0.7, 0.02)
         else:
             self.matcher.scale_range=(0.8, 2.0, 0.1)
         # threshhold = 0.9
@@ -252,23 +282,23 @@ class mainWindow(QtWidgets.QMainWindow):
                 self.match_gui_templates()
                 pass
             
-            # 루트 한번
-            elif self.matcher.iter == 1:
-                self.gui_img_files = get_all_images(self.gui_resource_root_dir)
-                self.matcher.iter += 1
-                self.match_gui_templates()                
-                pass
+            # # 루트 한번
+            # elif self.matcher.iter == 1:
+            #     self.gui_img_files = get_all_images(self.gui_resource_root_dir)
+            #     self.matcher.iter += 1
+            #     self.match_gui_templates()                
+            #     pass
             
-            # 모든 폴더에 대해 재 시도
-            elif len(self.gui_subfolders)>0:
-                subfodler = self.gui_subfolders.pop()
-                search = self.gui_resource_root_dir+f"/{subfodler}"
-                # GUI 폴더 경로상의 이미지 
-                self.gui_img_files = get_all_images(search)
-                self.matcher.iter +=1
-                # print(self.matcher.iter)
-                self.match_gui_templates()
-                pass
+            # # 모든 폴더에 대해 재 시도
+            # elif len(self.gui_subfolders)>0:
+            #     subfodler = self.gui_subfolders.pop()
+            #     search = self.gui_resource_root_dir+f"/{subfodler}"
+            #     # GUI 폴더 경로상의 이미지 
+            #     self.gui_img_files = get_all_images(search)
+            #     self.matcher.iter +=1
+            #     # print(self.matcher.iter)
+            #     self.match_gui_templates()
+            #     pass
             # elif self.matcher.iter == len():
             self.progress_bar.setFormat(" I can't ")
             self.gui_search.setEnabled(True)    
@@ -284,6 +314,12 @@ class mainWindow(QtWidgets.QMainWindow):
         # gui 관련 파라미터 업데이트
         self.update_gui_parameters(self.matcher)
         
+        folder_dir = os.getcwd()+"/screen"
+        create_directory_if_not_exists(folder_dir)
+        saved_file = folder_dir+"/gui_result.jpg"
+        cv2.imwrite(f"{saved_file}",result_image)
+        print(f"Screenshot saved as {saved_file}")
+            
         self.gui_pixmap = self.view_resized_img_on_widget(result_image,self.gui_result.width(),self.gui_result.height())
         self.gui_result.setPixmap(self.gui_pixmap)
         
@@ -489,6 +525,7 @@ class mainWindow(QtWidgets.QMainWindow):
         QThread.msleep(int(500))
         # 윈도우 화면 전체 캡쳐
         image = self.handler.caputer_monitor_to_cv_img()
+        # image = self.handler.captuer_screen_on_application()
         
         self.matcher.update_img_datas(image,templates)
         self.matcher.start()  # QThread 시작

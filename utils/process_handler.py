@@ -18,8 +18,7 @@ from memory_profiler import profile
 import pygetwindow as gw
 
 import numpy as np
-import mss
-import mss.tools
+
 
 import warnings
 warnings.filterwarnings("ignore", message="Apply externally defined coinit_flags: 2")
@@ -32,12 +31,18 @@ if current_os == "Windows":
     import ctypes
     from ctypes import windll
 
+    # DPI 인식 활성화
+    ctypes.windll.shcore.SetProcessDpiAwareness(2)
+    
     import win32gui
     import win32ui
     # import win32con
     import win32process
     
     from pywinauto import Application, mouse, keyboard
+
+    import mss
+    import mss.tools
 
 def create_directory_if_not_exists(dir_path):
     if not os.path.exists(dir_path):
@@ -63,8 +68,8 @@ class WindowProcessHandler():
     __slot__ = ['hwnd','window_process']
     
     def __init__(self):
-        # DPI 인식 활성화
-        ctypes.windll.shcore.SetProcessDpiAwareness(2)
+        # # DPI 인식 활성화
+        # ctypes.windll.shcore.SetProcessDpiAwareness(2)
         
         # self.frame = frame
         

@@ -40,6 +40,7 @@ class RepeatPattern(QThread):
 
     subfolder = pyqtSignal(str)
     finished = pyqtSignal(str)
+    action_finished = pyqtSignal(list)
     
     def __init__(self):
         super().__init__()
@@ -54,6 +55,7 @@ class RepeatPattern(QThread):
         self.compiled_pattern = re.compile(pattern)
         # pattern = re.escape(string) # 특정 문자열을 정규 표현식 패턴으로 변환
         self.compiled_esc_pattern = re.compile(none_esc_patter)
+        self.actions_list = []
     
     def receive_items(self, items):
         
@@ -101,12 +103,14 @@ class RepeatPattern(QThread):
     
     
     def run(self): # ctrl+esc 로 종료 메시지
+
         
         while self.running:
             
             if len(self.items) < 1:
                 print(f"Items is empty")
                 self.finished.emit("모든 동작을 실행했습니다.")
+                self.action_finished.emit(self.actions_list)
                 break
                     
             # for item in self.items:
@@ -126,6 +130,7 @@ class RepeatPattern(QThread):
                     img = dinfo[0]
                     coord = dinfo[1]
                     print(f"{ptype}, {img}")
+                    self.actions_list.append(data)
                     # self.msleep(int(500*self.delay))
                     pre_frame = self.handler.caputer_monitor_to_cv_img()
                     self.handler.mouseclick('left',coord)
@@ -143,6 +148,7 @@ class RepeatPattern(QThread):
                     coord = dinfo[1]
                     self.handler.mouseclick('left',coord)
                     print(f"{ptype}, {img}")
+                    self.actions_list.append(data)
                     self.subfolder.emit(img)
                     break
                 elif ptype == ItemType.DELAY:

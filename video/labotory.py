@@ -9,12 +9,22 @@ import concurrent.futures
 # from process_handler import WindowProcessHandler
 from template_matcher import TemplateMatcher
 
-from collections import OrderedDict # 순서대로 Dict
 
 import cv2
 import numpy as np
 
+import re
 
+def atoi(text):
+    return int(text) if text.isdigit() else text
+
+def natural_keys(text):
+    '''
+    alist.sort(key=natural_keys) sorts in human order
+    http://nedbatchelder.com/blog/200712/human_sorting.html
+    (See Toothy's implementation in the comments)
+    '''
+    return [ atoi(c) for c in re.split(r'(\d+)', text) ]
 
 def make_template(root_folder, is_rotate = False):
     # 이미지 파일 확장자 목록
@@ -27,22 +37,24 @@ def make_template(root_folder, is_rotate = False):
     for extension in image_extensions:
         # all_images.extend(glob.glob(os.path.join(root_folder, '**', extension), recursive=False))
         all_images.extend(glob.glob(os.path.join(root_folder, extension), recursive=False))
-        
-        # 사용 예제
+    
+    # Sorting image files
+    all_images.sort(key=natural_keys)
+
+    # 사용 예제
     templates = []
     
-    for name in all_images:
-        
-        # name = name.split('\\')[-1]
-        # name = file.split('.')[0]
+    for file in all_images:
+        # name = file.split('/')[-1]
+        name = file.split('.')[0]
         # print(name)
         template = {}
         # template[name] = load_and_resize_image(file)
         # template[name] =  cv2.imread(file, cv2.IMREAD_COLOR)
         if not is_rotate:
-            template[name] =  cv2.imread(name, cv2.IMREAD_GRAYSCALE)
+            template[name] =  cv2.imread(file, cv2.IMREAD_GRAYSCALE)
         else:
-            template[name] =  cv2.imread(name, cv2.IMREAD_COLOR)
+            template[name] =  cv2.imread(file, cv2.IMREAD_COLOR)
         templates.append(template)
     return templates
     
@@ -63,12 +75,8 @@ def get_match_info(matches):
         bottom_right = (top_left[0] + int(h * scale), top_left[1] + int(w * scale))
             
         gui_dic = {} # gui 유사도, 좌표, ui name 탐색
-        mc_loc = [loc[0] + int(w * scale * 0.5), loc[1] + int(h * scale * 0.5)]        
-
-        bbox = top_left + bottom_right
-        
-        # 파일명, 이미지데이터, 중심좌표, bbox
-        gui_dic[name] = ( template_tuple[0] ,template_tuple[1], mc_loc, bbox )
+        mc_loc = [loc[0] + int(w * scale * 0.5), loc[1] + int(h * scale * 0.5)]
+        gui_dic[name] = ( template_tuple[0] ,template_tuple[1], mc_loc, top_left+bottom_right, [w,h] )
         match_info.append(gui_dic)
     return match_info
 
@@ -101,93 +109,15 @@ def rotate_image(image, angle):
     rotated = cv2.warpAffine(image, M, (new_w, new_h))
     return rotated
 
-def make_train_datas():
-    key_lst = ['images','annotations','categories']
-    train_datas = {}
-    for key in key_lst:
-        train_datas[key] = []
 
-    return train_datas
-
-def make_image(images,filename,h,w):
-    id = -1
-    is_exist = False
-    for image in images:
-        if image['file_name'] == filename:
-            return image, not is_exist
-        id = int(image['id'])
-    
-    if id < 0:
-        id = 1
-    else:
-        id += 1
-    
-    return add_image(id,filename,h,w), is_exist
-
-def make_annotation(annotations,image_id,category_id,bbox,area,iscrowd=0):
-    
-    id = -1
-    is_exist = False
-    for annotation in annotations:
-        if annotation['image_id'] == image_id:
-            return annotation, not is_exist
-        id = int(annotation['id'])
-    # area = abs(bbox[0]-bbox[1])*abs(bbox[2]-bbox[3])
-    
-    if id < 0:
-        id = 1
-    else:
-        id += 1
-    return add_annotation(id,image_id,category_id,bbox,area,iscrowd), is_exist
-
-def make_category(categories,name):
-    id = -1
-    is_exist = False
-    for category in categories:
-        if category['name'] == name:
-            return category, not is_exist
-        id = int(category['id'])
-    
-    if id < 0:
-        id = 1
-    else:
-        id += 1
-        
-    return add_category(id, name), is_exist
-        
-
-def add_image(id,filename,height,width):
-    image = OrderedDict()
-    image['id'] = id
-    image['file_name'] = filename
-    image['height'] = height
-    image['width'] = width
-    return image
-
-def add_annotation(id,image_id,category_id,bbox,area,iscrowd):
-    annotation =OrderedDict()
-    annotation['id'] = id
-    annotation['image_id'] = image_id
-    annotation['category_id'] = category_id
-    annotation['bbox'] = bbox
-    annotation['area'] = area
-    annotation['iscrowd'] = iscrowd # 1이면 군집, 0이면 단일
-    return annotation
-
-def add_category(id,name):
-    category = OrderedDict()
-    category['id']=id
-    category['name']=name
-    # category['supercategory']=supercategory
-    return category
-    
+g_supercategory = f"geometryDash"
 
 # 결과 저장 디렉토리 생성
-output_dir = f'video/output_images'
+output_dir = f'video/dataset/images'
 os.makedirs(output_dir, exist_ok=True)
     
 # Delete the JSON file if it already exists
-tmp_file = 'dataset.json'
+tmp_file = f'../annotations.json'
 json_file_path = os.path.join(output_dir, tmp_file)
 if os.path.exists(json_file_path):
     os.remove(json_file_path)
@@ -199,22 +129,53 @@ def argments_rotate(folder):
         for k,v in template.items():
             name = k.split('\\')[-1]
             name = name.split('_')[0]
-            for angle in range(0, 360, 30):
+            for angle in range(0, 360, 45):
                 rotated_image = rotate_image(v, angle)
-                result_filename = f'{name}_{angle}.jpg'
+                result_filename = f'{name}_{angle}.png'
                 result_path = os.path.join(output_dir, result_filename)
                 cv2.imwrite(result_path, rotated_image)
             
+def make_images(id,file_name,width,height):
+    result = {}
+    result['id'] = id
+    result['file_name'] = file_name
+    result['width'] = width
+    result['height'] = height
+    return result
+
+def make_annotations(id,image_id,category_id,bbox,area,iscrowd=0):
+    result = {}
+    result['id'] = id
+    result['image_id'] = image_id
+    result['category_id'] = category_id
+    result['bbox'] = bbox
+    result['area'] = area
+    result['iscrowd'] = iscrowd
+    return result
+
+def make_categories(id,name,supercategory):
+    result = {}
+    result['id'] = id
+    result['name'] = name
+    result['supercategory'] = supercategory
+    return result
 
 def make_argments(match_info,frame, frame_cnt):
-    
-    
+    annotations = {}
+
+    image_id = 1
+    category_id = 0
+
+    # infos = [ k+v for k,v in info.items() for info in match_info]    
     # Load existing results if the file exists
-    # results = []
-    results = make_train_datas()
     if os.path.exists(json_file_path):
         with open(json_file_path, 'r', encoding='utf-8') as json_file:
-            results =  json.load(json_file)
+            annotations = json.load(json_file)
+        category_id = int(annotations['categories'][-1]['id'])
+    else:
+        annotations['images'] = []
+        annotations['annotations'] = []
+        annotations['categories'] = []
 
     while len(match_info) > 0:
         infos = match_info.pop(0)
@@ -227,31 +188,39 @@ def make_argments(match_info,frame, frame_cnt):
             path = os.path.join(output_dir, result_filename)
             cv2.imwrite(path, frame)
 
-            # Images : id/파일명/h/w
-            # Annotation : id/image_id/category_id/bbx/area/iscrowd
-            # categories : id/name
-            # 새로운 데이터를 추가할지 여부 확인 및 추가
-            # h,w = v[1].shape
-            # image, is_exist = make_image(results['images'],v[0],h,w)
-            
             h,w,_ = frame.shape
-            image, is_exist = make_image(results['images'],result_filename,h,w)
             
-            if not is_exist:
-                results['images'].append(image)
-            category, is_exist = make_category(results['categories'],k)
-            if not is_exist:
-                results['categories'].append(category)
+            # w,h = v[-1]
             area = w*h
-            # is_crowed = 0
-            annotation,is_exist = make_annotation(results['annotations'],image['id'],category['id'],v[-1],area)
-            if not is_exist:
-                results['annotations'].append(annotation)
-        
+            iscrowd = 0
+            name = k
+            supercategory = g_supercategory
+
+            images_data = make_images(frame_cnt,path,w,h)
+            
+            annotation_data = make_annotations(frame_cnt,image_id,category_id,v[-2],area,iscrowd)
+
+            annotations['images'].append(images_data)
+            annotations['annotations'].append(annotation_data)
+
+            # 이미 존재하는 카테고리 이름을 집합으로 추출
+            existing_category_names = {category['name'] for category in annotations['categories']}
+
+            # 새 카테고리를 추가할지 여부 확인
+            if k not in existing_category_names:
+                categories_data = make_categories(category_id + 1, name, supercategory)
+                annotations['categories'].append(categories_data)
+            
+            # annotations.append({
+            #     'boxs': v[-2],
+            #     'labels': k,
+            #     'coord': v[-3]
+            # })
+    
     with open(json_file_path, 'w', encoding='utf-8') as json_file:
-        json.dump(results, json_file, ensure_ascii=False, indent=4)
+        json.dump(annotations, json_file, ensure_ascii=False, indent=4)
         
-    return results, frame_cnt
+    return annotations, frame_cnt
 
 labotory = TemplateMatcher(template=None,scale_range=(0.5,1.0,0.1))
 
@@ -287,6 +256,7 @@ async def capture_frames():
     loop = asyncio.get_event_loop()
     # rotate 추가
     # argments_rotate(template_folder) 
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
         while True:
             if not paused:
