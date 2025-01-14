@@ -15,6 +15,9 @@ import numpy as np
 
 import re
 
+
+categories_name = []
+
 def atoi(text):
     return int(text) if text.isdigit() else text
 
@@ -160,12 +163,74 @@ def make_categories(id,name,supercategory):
     result['supercategory'] = supercategory
     return result
 
+def make_dataset(name,img_id,cat_id,bbox,area,iscrowd=0):
+    result = {}    
+    
+    result['image_id'] = img_id
+    result['category_id'] = cat_id
+    result['file_name'] = name
+    result['bbox'] = bbox
+    result['area'] = area
+    result['iscrowd'] = iscrowd
+    return result
+
+def make_datasets(match_info,frame, frame_cnt):
+    datasets = []
+
+    # image_id = 1
+    category_id = 0
+
+    # Load existing results if the file exists
+    if os.path.exists(json_file_path):
+        with open(json_file_path, 'r', encoding='utf-8') as json_file:
+            datasets = json.load(json_file)
+
+        if len(datasets) > 0 :
+            category_id = int(datasets[-1]['category_id'])
+            name = datasets[-1]['file_name']
+            if name not in categories_name:
+                categories_name.append(name)
+
+    while len(match_info) > 0:
+        infos = match_info.pop(0)
+        # print(f"{infos}")
+        for k,v in infos.items():
+            # cv2.rectangle(frame, v[-1][:2], v[-1][2:], (0, 0, 255), 4)
+            # cv2.putText(frame, f'{k}', (v[-1][0], v[-1][1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
+            # resized_image = resize_image(values[0], scale)
+            result_filename = f'{k}_{frame_cnt}.jpg'
+            path = os.path.join(output_dir, result_filename)
+            cv2.imwrite(path, frame)
+
+            h,w,_ = frame.shape
+            
+            # w,h = v[-1]
+            area = w*h
+            iscrowd = 0
+            name = k
+            # 이미 존재하는 카테고리 이름을 집합으로 추출
+            if k in categories_name:
+                category_id = categories_name.index(k) + 1
+            else: # 새 카테고리를 추가할지 여부 확인
+                if len(categories_name) > 0:
+                    category_id = categories_name.index(categories_name[len(categories_name)-1]) +1
+                else:
+                    category_id = 1
+
+            datasets.append(make_dataset(name,frame_cnt,category_id,v[-2],area,iscrowd))
+    
+    if len(datasets)  > 0:
+        with open(json_file_path, 'w', encoding='utf-8') as json_file:
+            json.dump(datasets, json_file, ensure_ascii=False, indent=4)
+        
+    return datasets, frame_cnt
+
 def make_argments(match_info,frame, frame_cnt):
     annotations = {}
 
     image_id = 1
     category_id = 0
-
+    
     # infos = [ k+v for k,v in info.items() for info in match_info]    
     # Load existing results if the file exists
     if os.path.exists(json_file_path):
@@ -236,10 +301,11 @@ def process_match(matches):
     return get_match_info(matches)
 
 def process_arg(matches_info,frame,frame_cnt):
-    return make_argments(matches_info,frame,frame_cnt)
+    # return make_argments(matches_info,frame,frame_cnt)
+    return make_datasets(matches_info,frame,frame_cnt)
 
 # 비디오 파일 경로
-video_path = 'video/Official Geometry Dash Trailer.mp4'
+video_path = 'video/train_video.mp4'
         
 # 비디오 캡처 객체 생성
 cap = cv2.VideoCapture(video_path)

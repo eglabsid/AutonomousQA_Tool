@@ -51,6 +51,16 @@ def denormalize(tensor,mean,std):
 
 # from torch.utils.data import DataLoader
 
+def collate_fn(processor_DETR, batch):
+    pixel_values = [item[0] for item in batch]
+    encoding = processor_DETR.pad(pixel_values, return_tensors="pt")
+    labels = [item[1] for item in batch]
+    batch = {}
+    batch['pixel_values'] = encoding['pixel_values']
+    batch['pixel_mask'] = encoding['pixel_mask']
+    batch['labels'] = labels
+    return batch
+
 # 1. 데이터셋 로드
 class CustomDataset(Dataset):
     def __init__(self, root, annotation, transforms=None):
@@ -95,8 +105,9 @@ class CustomDataset(Dataset):
         boxes = []
         labels = []
         for ann in annotations:
-            x, y, w, h = ann['bbox']
-            boxes.append([x, y, x + w, y + h])  # COCO는 [x, y, width, height] 형식
+            # x, y, w, h = ann['bbox']
+            # boxes.append([x, y, x + w, y + h])  # COCO는 [x, y, width, height] 형식
+            boxes.append(ann['bbox'])
             labels.append(ann['category_id'])
 
         boxes = torch.tensor(boxes, dtype=torch.float32)
@@ -106,7 +117,7 @@ class CustomDataset(Dataset):
         target = {
             'boxes': boxes,
             'labels': labels,
-            'image_id': torch.tensor([img_id])
+            # 'image_id': torch.tensor([img_id])
         }
 
         # Transform 적용
@@ -145,14 +156,20 @@ def prepare_dataloader(root, annotation, batch_size=4):
 class DetrWithFeatureExtractor(torch.nn.Module):
     def __init__(self, pretrained_model_name, num_classes):
         super().__init__()
-        # Load pre-trained model and feature extractor
-        self.feature_extractor = DetrImageProcessor.from_pretrained(pretrained_model_name)
-        self.model = DetrForObjectDetection.from_pretrained(pretrained_model_name)
+        # # Load pre-trained model and feature extractor
+        # self.feature_extractor = DetrImageProcessor.from_pretrained(pretrained_model_name)
+        # self.model = DetrForObjectDetection.from_pretrained(pretrained_model_name)
 
-        # Update classification head for fine-tuning
-        self.model.class_labels_classifier = torch.nn.Linear(
-            self.model.class_labels_classifier.in_features, num_classes
-        )
+        # # Update classification head for fine-tuning
+        # self.model.class_labels_classifier = torch.nn.Linear(
+        #     self.model.class_labels_classifier.in_features, num_classes
+        # )
+        # 가중치 정의 (클래스 수에 맞춰 설정)
+        # class_weights = torch.ones(num_classes) # 예: 모든 클래스에 동일한 가중치
+        # criterion = torch.nn.CrossEntropyLoss(weight=class_weights)
+
+        self.model = DetrForObjectDetection.from_pretrained(pretrained_model_name,num_labels=num_classes,ignore_mismatched_sizes=True)
+        
 
     def forward(self, images, targets=None):
         """
@@ -167,6 +184,7 @@ class DetrWithFeatureExtractor(torch.nn.Module):
         Returns:
             Model outputs from DetrForObjectDetection.
         """
+        '''
         # Preprocess images
         mean = [0.485, 0.456, 0.406]
         std = [0.229, 0.224, 0.225]
@@ -178,24 +196,26 @@ class DetrWithFeatureExtractor(torch.nn.Module):
         
         # 3. PIL 이미지로 변환
         pil_image = F.to_pil_image(clamped_tensor)
+        
         # pil_image.show()
         inputs = self.feature_extractor(images=images, return_tensors="pt")
         pixel_values = inputs["pixel_values"]
-
-        # # If targets are provided, preprocess them
+        '''
+        # If targets are provided, preprocess them
         # if targets is not None:
         #     processed_targets = []
         #     for target in targets:
+        #         print(f"{target['boxes'].shape},{target['labels'].shape}")
         #         processed_target = {
         #             "boxes": target["boxes"].float(),
-        #             "labels": target["labels"]
+        #             "class_labels": target["labels"]
         #         }
         #         processed_targets.append(processed_target)
         # else:
         #     processed_targets = None
 
         # Forward pass through the DETR model
-        outputs = self.model(pixel_values=pixel_values, labels=targets)
+        outputs = self.model(pixel_values=images, labels=targets)
         
         return outputs
     
@@ -216,8 +236,9 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=50)
 
         # pixel_values = pixel_values.to(device)
         # targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-
-        loss_dict = model(images, targets)
+        
+        # loss_dict = model(images, targets)
+        loss_dict = model(torch.stack(images), targets)
         losses = sum(loss for loss in loss_dict.values())
         
         optimizer.zero_grad()
@@ -246,7 +267,7 @@ def main():
     pretrained_model_name = "facebook/detr-resnet-50"
     # Paths
     data_dir = f"./"  # Replace with your dataset directory
-    num_classes = 91  # COCO has 80 classes + background
+    
     annotation_dir = "./video/dataset/annotations.json"
     
     # Device
@@ -258,6 +279,7 @@ def main():
     data_loader = prepare_dataloader(data_dir,annotation_dir)
 
     # Model, optimizer, and scheduler
+    num_classes = 3  # COCO has 80 classes + background
     # model = get_model(num_classes).to(device)
     model = DetrWithFeatureExtractor(pretrained_model_name,num_classes).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-4)

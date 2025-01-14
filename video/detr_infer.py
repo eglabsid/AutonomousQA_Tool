@@ -20,7 +20,7 @@ processor = DetrImageProcessor.from_pretrained('facebook/detr-resnet-50')
 # url = 'https://example.com/sample-image.jpg'  # Replace with your image URL
 # image = Image.open(requests.get(url, stream=True).raw)
 
-image = Image.open('./video/test.jpg')
+image = Image.open('./video/animals.jpg')
 
 # Preprocess the image
 inputs = processor(images=image, return_tensors="pt")
