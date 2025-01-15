@@ -279,7 +279,7 @@ def main():
     data_loader = prepare_dataloader(data_dir,annotation_dir)
 
     # Model, optimizer, and scheduler
-    num_classes = 3  # COCO has 80 classes + background
+    num_classes = 2  # COCO has 80 classes + background
     # model = get_model(num_classes).to(device)
     model = DetrWithFeatureExtractor(pretrained_model_name,num_classes).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-4)

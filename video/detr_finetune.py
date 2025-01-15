@@ -231,7 +231,7 @@ def main():
     pretrained_model_name = "facebook/detr-resnet-50"
     # Paths
     data_dir = f"./"  # Replace with your dataset directory
-    num_classes = 91  # COCO has 80 classes + background
+    num_classes = 2  # COCO has 80 classes + background
     annotation_dir = "./video/dataset/annotations.json"
     
     # Device
@@ -249,7 +249,7 @@ def main():
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-4)
 
     # Training loop
-    num_epochs = 10
+    num_epochs = 30
     for epoch in range(num_epochs):
         train_loss = train_one_epoch(model, optimizer, data_loader, device, epoch)
         print(f"Epoch {epoch}, Training Loss: {train_loss:.4f}")
