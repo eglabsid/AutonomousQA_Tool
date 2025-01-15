@@ -21,10 +21,15 @@
 
 ## Trying to Finetuning DETR
 
+To
+
 ![DETR player](./images/output_detr_1.png)
 
 ![DETR player](./images/output_detr_2.png)
 
+From
+
+![Pretrained DETR](./images/output_image.jpg)
 
 ## 개발환경
 
