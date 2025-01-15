@@ -81,6 +81,8 @@ def get_match_info(matches):
         mc_loc = [loc[0] + int(w * scale * 0.5), loc[1] + int(h * scale * 0.5)]
         gui_dic[name] = ( template_tuple[0] ,template_tuple[1], mc_loc, top_left+bottom_right, [w,h] )
         match_info.append(gui_dic)
+        if len(match_info) >= 1:
+            break
     return match_info
 
 
@@ -213,11 +215,11 @@ def make_datasets(match_info,frame, frame_cnt):
                 category_id = categories_name.index(k) + 1
             else: # 새 카테고리를 추가할지 여부 확인
                 if len(categories_name) > 0:
-                    category_id = categories_name.index(categories_name[len(categories_name)-1]) +1
+                    category_id = len(categories_name) + 1
                 else:
                     category_id = 1
 
-            datasets.append(make_dataset(name,frame_cnt,category_id,v[-2],area,iscrowd))
+                datasets.append(make_dataset(path,frame_cnt,category_id,v[-2],area,iscrowd))
     
     if len(datasets)  > 0:
         with open(json_file_path, 'w', encoding='utf-8') as json_file:
@@ -228,23 +230,34 @@ def make_datasets(match_info,frame, frame_cnt):
 def make_argments(match_info,frame, frame_cnt):
     annotations = {}
 
-    image_id = 1
+    img_id = 1
+    ann_id = 1
     category_id = 0
     
     # infos = [ k+v for k,v in info.items() for info in match_info]    
+    
     # Load existing results if the file exists
     if os.path.exists(json_file_path):
         with open(json_file_path, 'r', encoding='utf-8') as json_file:
             annotations = json.load(json_file)
-        category_id = int(annotations['categories'][-1]['id'])
+        # category_id = int(annotations['categories']['id'])
+        if len(annotations['categories']) > 0:
+
+            
+            category_id = int(annotations['categories'][-1]['id'])
+            ann_id = int(annotations['annotations'][-1]['id'])
+            img_id = int(annotations['images'][-1]['id'])
+            name = annotations['categories'][-1]['name']
+            if name not in categories_name:
+                categories_name.append(name)
     else:
         annotations['images'] = []
         annotations['annotations'] = []
         annotations['categories'] = []
 
+    # print(f"{len(match_info)}")
     while len(match_info) > 0:
-        infos = match_info.pop(0)
-        # print(f"{infos}")
+        infos = match_info.pop(0)    
         for k,v in infos.items():
             # cv2.rectangle(frame, v[-1][:2], v[-1][2:], (0, 0, 255), 4)
             # cv2.putText(frame, f'{k}', (v[-1][0], v[-1][1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
@@ -261,21 +274,30 @@ def make_argments(match_info,frame, frame_cnt):
             name = k
             supercategory = g_supercategory
 
-            images_data = make_images(frame_cnt,path,w,h)
-            
-            annotation_data = make_annotations(frame_cnt,image_id,category_id,v[-2],area,iscrowd)
+            if len(annotations['images']):
+                img_id = int(annotations['images'][-1]['id'])+1
+            if len(annotations['annotations']):
+                ann_id = int(annotations['annotations'][-1]['id'])+1
+
+            # 이미 존재하는 카테고리 이름을 집합으로 추출
+            if name not in categories_name:
+                if len(categories_name) > 0:
+                    category_id = len(categories_name) + 1
+                else:
+                    category_id = 1
+
+                categories_name.append(name)
+                categories_data = make_categories(category_id, name, supercategory)
+                annotations['categories'].append(categories_data)
+            else:
+                category_id = categories_name.index(name)+1
+
+            images_data = make_images(img_id,path,w,h)            
+            annotation_data = make_annotations(ann_id,img_id,category_id,v[-2],area,iscrowd)
 
             annotations['images'].append(images_data)
             annotations['annotations'].append(annotation_data)
 
-            # 이미 존재하는 카테고리 이름을 집합으로 추출
-            existing_category_names = {category['name'] for category in annotations['categories']}
-
-            # 새 카테고리를 추가할지 여부 확인
-            if k not in existing_category_names:
-                categories_data = make_categories(category_id + 1, name, supercategory)
-                annotations['categories'].append(categories_data)
-            
             # annotations.append({
             #     'boxs': v[-2],
             #     'labels': k,
@@ -301,11 +323,12 @@ def process_match(matches):
     return get_match_info(matches)
 
 def process_arg(matches_info,frame,frame_cnt):
-    # return make_argments(matches_info,frame,frame_cnt)
-    return make_datasets(matches_info,frame,frame_cnt)
+    return make_argments(matches_info,frame,frame_cnt)
+    # return make_datasets(matches_info,frame,frame_cnt)
 
 # 비디오 파일 경로
 video_path = 'video/train_video.mp4'
+# video_path = 'video/test_cat.mp4'
         
 # 비디오 캡처 객체 생성
 cap = cv2.VideoCapture(video_path)
