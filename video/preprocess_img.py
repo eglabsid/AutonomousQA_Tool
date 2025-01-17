@@ -88,9 +88,9 @@ for name,image in load_images:
     box  = [y,x,y+h,x+w]
     name = name[0]
     # 45도씩 회전 및 크기 조절
-    for angle in range(0, 360, 15):
+    for angle in range(0, 181, 15):
         rotated_image = rotate_image_with_alpha(image, angle)
-        for scale in [0.5, 1.0, 1.5]:
+        for scale in [1.0]:#[0.5, 1.0, 1.5]:
             resized_image = resize_image(rotated_image, scale)
             result_filename = f'{name}_{angle}_{scale}.png'
             result_path = os.path.join(output_dir, result_filename)

@@ -81,8 +81,8 @@ def get_match_info(matches):
         mc_loc = [loc[0] + int(w * scale * 0.5), loc[1] + int(h * scale * 0.5)]
         gui_dic[name] = ( template_tuple[0] ,template_tuple[1], mc_loc, top_left+bottom_right, [w,h] )
         match_info.append(gui_dic)
-        if len(match_info) >= 1:
-            break
+        # if len(match_info) >= 1:
+        #     break
     return match_info
 
 
@@ -269,7 +269,8 @@ def make_argments(match_info,frame, frame_cnt):
             h,w,_ = frame.shape
             
             # w,h = v[-1]
-            area = w*h
+            # area = w*h
+            area = (v[-2][:, 3] - v[-2][:, 1]) * (v[-2][:, 2] - v[-2][:, 0])
             iscrowd = 0
             name = k
             supercategory = g_supercategory
