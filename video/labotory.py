@@ -270,7 +270,7 @@ def make_argments(match_info,frame, frame_cnt):
             
             # w,h = v[-1]
             # area = w*h
-            area = (v[-2][:, 3] - v[-2][:, 1]) * (v[-2][:, 2] - v[-2][:, 0])
+            area = (v[-2][3] - v[-2][1]) * (v[-2][2] - v[-2][0])
             iscrowd = 0
             name = k
             supercategory = g_supercategory

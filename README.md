@@ -21,6 +21,8 @@
 
 ## Trying to Finetuning DETR
 
+To train Dataset is made by video from Youtube (https://www.youtube.com/watch?v=cO0yKl_xXBQ) 
+
 To
 
 ![DETR player](./images/output_detr_1.png)
